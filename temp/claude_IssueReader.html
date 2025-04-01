@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Issue Viewer</title> <!-- 引入marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <!-- 引入GitHub样式 -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css">
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #24292e;
+            --border-color: #e1e4e8;
+            --hover-color: #f6f8fa;
+            --primary-color: #0366d6;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0d1117;
+                --text-color: #c9d1d9;
+                --border-color: #30363d;
+                --hover-color: #161b22;
+                --primary-color: #58a6ff;
+                --modal-bg: rgba(0, 0, 0, 0.8);
+            }
+
+            .markdown-body {
+                color-scheme: dark;
+                --color-prettylights-syntax-comment: #8b949e;
+                --color-prettylights-syntax-constant: #79c0ff;
+                --color-prettylights-syntax-entity: #d2a8ff;
+                --color-prettylights-syntax-storage-modifier-import: #c9d1d9;
+                --color-prettylights-syntax-entity-tag: #7ee787;
+                --color-prettylights-syntax-keyword: #ff7b72;
+                --color-prettylights-syntax-string: #a5d6ff;
+                --color-prettylights-syntax-variable: #ffa657;
+                --color-prettylights-syntax-brackethighlighter-unmatched: #f85149;
+                --color-prettylights-syntax-invalid-illegal-text: #f0f6fc;
+                --color-prettylights-syntax-invalid-illegal-bg: #8e1519;
+                --color-prettylights-syntax-carriage-return-text: #f0f6fc;
+                --color-prettylights-syntax-carriage-return-bg: #b62324;
+                --color-prettylights-syntax-string-regexp: #7ee787;
+                --color-prettylights-syntax-markup-list: #f2cc60;
+                --color-prettylights-syntax-markup-heading: #1f6feb;
+                --color-prettylights-syntax-markup-italic: #c9d1d9;
+                --color-prettylights-syntax-markup-bold: #c9d1d9;
+                --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
+                --color-prettylights-syntax-markup-deleted-bg: #67060c;
+                --color-prettylights-syntax-markup-inserted-text: #aff5b4;
+                --color-prettylights-syntax-markup-inserted-bg: #033a16;
+                --color-prettylights-syntax-markup-changed-text: #ffdfb6;
+                --color-prettylights-syntax-markup-changed-bg: #5a1e02;
+                --color-prettylights-syntax-markup-ignored-text: #c9d1d9;
+                --color-prettylights-syntax-markup-ignored-bg: #1158c7;
+                --color-prettylights-syntax-meta-diff-range: #d2a8ff;
+                --color-prettylights-syntax-brackethighlighter-angle: #8b949e;
+                --color-prettylights-syntax-sublimelinter-gutter-mark: #484f58;
+                --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
+                --color-fg-default: #c9d1d9;
+                --color-fg-muted: #8b949e;
+                --color-fg-subtle: #6e7681;
+                --color-canvas-default: #0d1117;
+                --color-canvas-subtle: #161b22;
+                --color-border-default: #30363d;
+                --color-border-muted: #21262d;
+                --color-neutral-muted: rgba(110, 118, 129, 0.4);
+                --color-accent-fg: #58a6ff;
+                --color-accent-emphasis: #1f6feb;
+                --color-attention-subtle: rgba(187, 128, 9, 0.15);
+                --color-danger-fg: #f85149;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .issue-list {
+            width: 300px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .issue-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100%;
+            position: relative;
+        }
+
+        .issue-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .issue-item:hover {
+            background-color: var(--hover-color);
+        }
+
+        .issue-item.active {
+            background: linear-gradient(to right, #174478 0%, #1c2d43 100%);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .issue-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .issue-meta {
+            font-size: 12px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-bg);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: var(--bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            flex: 1;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .header {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-container {
+            flex: 1;
+        }
+
+        #search-issues {
+            outline: none;
+            width: 100%;
+
+            &:active,
+            &:focus {
+                border-color: var(--primary-color);
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .repo-switcher {
+            background-color: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .repo-switcher:hover {
+            opacity: 0.9;
+        }
+
+        .issues-list-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .issue-list {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .issue-content {
+                height: 60vh;
+            }
+
+            .repo-switcher {
+                top: 10px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="issue-list">
+            <div class="header">
+                <div class="repo-switcher" id="repo-switcher" title="切换仓库"> <i class="fas fa-exchange-alt"></i> </div>
+                <div class="search-container"> <input type="text" id="search-issues" placeholder="搜索issues..."> </div>
+            </div>
+            <div id="issues-container" class="issues-list-container">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+        <div class="issue-content">
+            <div id="issue-detail" class="markdown-body">
+                <div class="loading">请选择一个Issue查看详情</div>
+            </div>
+        </div>
+    </div>
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <h2>GitHub 授权</h2>
+            <div class="form-group"> <label for="github-token">GitHub Token</label>
+                <input type="password" id="github-token" placeholder="输入您的GitHub个人访问令牌">
+            </div>
+            <div class="form-group" id="repo-form-group" style="display: none;">
+                <label for="repo-dropdown">选择仓库</label>
+                <select id="repo-dropdown"></select>
+            </div>
+            <div>
+                <button id="verify-token">验证</button>
+                <button id="save-settings" style="display: none;">保存</button>
+            </div>
+        </div>
+    </div>
+    <div id="repo-modal" class="modal">
+        <div class="modal-content">
+            <h2>切换仓库</h2>
+            <div class="form-group">
+                <label for="repo-select-modal">选择仓库</label>
+                <select id="repo-select-modal"></select>
+            </div>
+            <div style="display: flex;">
+                <button id="switch-repo">切换</button>
+                <button id="cancel-switch">取消</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        const authModal = document.getElementById('auth-modal');
+        const repoModal = document.getElementById('repo-modal');
+        const tokenInput = document.getElementById('github-token');
+        const verifyButton = document.getElementById('verify-token');
+        const saveButton = document.getElementById('save-settings');
+        const repoFormGroup = document.getElementById('repo-form-group');
+        const repoDropdown = document.getElementById('repo-dropdown');
+        const repoSelectModal = document.getElementById('repo-select-modal');
+        const switchRepoButton = document.getElementById('switch-repo');
+        const cancelSwitchButton = document.getElementById('cancel-switch');
+        const repoSwitcher = document.getElementById('repo-switcher');
+        const issuesContainer = document.getElementById('issues-container');
+        const issueDetail = document.getElementById('issue-detail');
+        const searchIssues = document.getElementById('search-issues');
+        const API_BASE_URL = 'https://api.github.com';
+
+        let currentIssue = null;
+        let allIssues = [];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('githubToken');
+            if (!token) {
+                showAuthModal();
+                return;
+            }
+
+            try {
+                const isValid = await verifyToken(token);
+                if (!isValid) {
+                    showAuthModal();
+                    return;
+                }
+
+                await loadRepos();
+                const savedRepo = localStorage.getItem('repo');
+                if (savedRepo) {
+                    loadIssues(savedRepo);
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showAuthModal();
+            }
+        });
+
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/user`, {
+                    headers: {
+                        'Authorization': `token ${token}`
+                    }
+                });
+                return response.status === 200;
+            } catch (error) {
+                console.error('Token verification error:', error);
+                return false;
+            }
+        }
+
+        function showAuthModal() {
+            authModal.style.display = 'flex';
+        }
+
+        verifyButton.addEventListener('click', async () => {
+            const token = tokenInput.value.trim();
+            if (!token) {
+                alert('Please enter GitHub Token');
+                return;
+            }
+
+            try {
+                const isValid = await verifyToken(token);
+                if (!isValid) {
+                    alert('Invalid token, please check and try again');
+                    return;
+                }
+
+                const repos = await fetchUserRepos(token);
+                repoDropdown.innerHTML = '';
+                repos.forEach(repo => {
+                    const option = document.createElement('option');
+                    option.value = repo.full_name;
+                    option.textContent = repo.full_name;
+                    repoDropdown.appendChild(option);
+                });
+
+                repoFormGroup.style.display = 'block';
+                saveButton.style.display = 'inline-block';
+                verifyButton.style.display = 'none';
+            } catch (error) {
+                console.error('Verification process error:', error);
+                alert('Error during verification, please try again');
+            }
+        });
+
+        saveButton.addEventListener('click', () => {
+            const token = tokenInput.value.trim();
+            const repo = repoDropdown.value;
+            if (!token || !repo) {
+                alert('Please select a repository');
+                return;
+            }
+
+            localStorage.setItem('githubToken', token);
+            localStorage.setItem('repo', repo);
+            authModal.style.display = 'none';
+            loadRepos();
+            loadIssues(repo);
+        });
+
+        async function fetchUserRepos(token) {
+            const response = await fetch(`${API_BASE_URL}/user/repos?per_page=100`, {
+                headers: {
+                    'Authorization': `token ${token}`
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch repositories');
+            }
+            return await response.json();
+        }
+
+        async function loadRepos() {
+            const token = localStorage.getItem('githubToken');
+            if (!token) return;
+
+            try {
+                const repos = await fetchUserRepos(token);
+                repoSelectModal.innerHTML = '';
+                repos.forEach(repo => {
+                    const option = document.createElement('option');
+                    option.value = repo.full_name;
+                    option.textContent = repo.full_name;
+                    repoSelectModal.appendChild(option);
+                });
+
+                const savedRepo = localStorage.getItem('repo');
+                if (savedRepo) {
+                    repoSelectModal.value = savedRepo;
+                }
+            } catch (error) {
+                console.error('Load repos error:', error);
+            }
+        }
+
+        repoSwitcher.addEventListener('click', () => {
+            repoModal.style.display = 'flex';
+        });
+
+        switchRepoButton.addEventListener('click', () => {
+            const repo = repoSelectModal.value;
+            if (repo) {
+                localStorage.setItem('repo', repo);
+                repoModal.style.display = 'none';
+                loadIssues(repo);
+            } else {
+                alert('Please select a repository');
+            }
+        });
+
+        cancelSwitchButton.addEventListener('click', () => {
+            repoModal.style.display = 'none';
+        });
+
+        searchIssues.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            filterIssues(searchTerm);
+        });
+
+        function filterIssues(searchTerm) {
+            if (!allIssues.length) return;
+
+            issuesContainer.innerHTML = '';
+            const filteredIssues = searchTerm
+                ? allIssues.filter(issue => issue.title.toLowerCase().includes(searchTerm) || `#${issue.number}`.includes(searchTerm))
+                : allIssues;
+
+            if (filteredIssues.length === 0) {
+                issuesContainer.innerHTML = '<div class="loading">No matching issues found</div>';
+                return;
+            }
+
+            renderIssuesList(filteredIssues);
+        }
+
+        function renderIssuesList(issues) {
+            issuesContainer.innerHTML = '';
+            issues.forEach(issue => {
+                const issueElement = document.createElement('div');
+                issueElement.className = 'issue-item';
+                issueElement.dataset.issueId = issue.number;
+                const createdDate = new Date(issue.created_at).toLocaleDateString();
+                issueElement.innerHTML = `
+                    <div class="issue-title">${issue.title}</div>
+                `;
+                issueElement.addEventListener('click', () => {
+                    document.querySelectorAll('.issue-item.active').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    issueElement.classList.add('active');
+                    showIssueDetail(issue);
+                });
+                issuesContainer.appendChild(issueElement);
+            });
+
+            if (currentIssue) {
+                const activeElement = document.querySelector(`.issue-item[data-issue-id="${currentIssue.number}"]`);
+                if (activeElement) {
+                    activeElement.classList.add('active');
+                }
+            }
+        }
+
+        async function loadIssues(repo) {
+            if (!repo) return;
+            const token = localStorage.getItem('githubToken');
+            if (!token) return;
+
+            issuesContainer.innerHTML = '<div class="loading">Loading...</div>';
+            issueDetail.innerHTML = '<div class="loading">Select an issue to view details</div>';
+            currentIssue = null;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/repos/${repo}/issues?state=all&per_page=100`, {
+                    headers: {
+                        'Authorization': `token ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch issues');
+                }
+                const issues = await response.json();
+                allIssues = issues;
+
+                if (issues.length === 0) {
+                    issuesContainer.innerHTML = '<div class="loading">No issues found</div>';
+                    return;
+                }
+
+                renderIssuesList(issues);
+
+                if (issues.length > 0) {
+                    const firstIssue = issues[0];
+                    const firstIssueElement = document.querySelector(`.issue-item[data-issue-id="${firstIssue.number}"]`);
+                    if (firstIssueElement) {
+                        firstIssueElement.classList.add('active');
+                        showIssueDetail(firstIssue);
+                    }
+                }
+
+                searchIssues.value = '';
+            } catch (error) {
+                console.error('Load issues error:', error);
+                issuesContainer.innerHTML = '<div class="loading">Failed to load issues</div>';
+            }
+        }
+
+        function showIssueDetail(issue) {
+            currentIssue = issue;
+            const renderedBody = marked.parse(issue.body || '');
+            issueDetail.innerHTML = `
+                <h1>${issue.title}</h1>
+                <div class="issue-meta" style="margin-bottom: 20px;">
+                    <a href="${issue.html_url}" target="_blank">${issue.user.login} created on ${new Date(issue.created_at).toLocaleString()} </a>
+                </div>
+                <div>${renderedBody}</div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
+</body>
+
+</html>

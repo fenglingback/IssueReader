@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Issue Viewer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css"
+        rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #24292f;
+            --border-color: #e1e4e8;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-color);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .sidebar {
+            flex: 0 0 300px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding-right: 20px;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding-left: 20px;
+        }
+
+        .issue-item {
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .issue-item:hover {
+            background-color: rgba(175, 214, 133, 0.1);
+        }
+
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            padding: 20px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                --bg-color: #0d1117;
+                --text-color: #c9d1d9;
+                --border-color: #30363d;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                flex: 0 0 auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                height: 300px;
+            }
+
+            .content {
+                flex: 1;
+                padding-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="authModal" class="modal">
+        <h2>GitHub Authentication</h2>
+        <input type="text" id="tokenInput" placeholder="Enter GitHub Token" style="width: 100%; margin: 1rem 0;">
+        <button onclick="verifyToken()" style="margin-right: 1rem;">Verify Token</button>
+        <select id="repoSelect" style="display: none; width: 100%; margin: 1rem 0;"></select>
+        <button onclick="saveSettings()" id="saveBtn" style="display: none;">Save</button>
+        <p id="errorMsg" style="color: red;"></p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar" id="issueList"></div>
+        <div class="content markdown-body" id="issueContent"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const clientId = 'YOUR_CLIENT_ID'; // 替换为你的GitHub OAuth客户端ID
+        const authModal = document.getElementById('authModal');
+        const tokenInput = document.getElementById('tokenInput');
+        const repoSelect = document.getElementById('repoSelect');
+        const saveBtn = document.getElementById('saveBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // 检查颜色方案
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+        document.body.setAttribute('data-theme', prefersDark.matches ? 'dark' : 'light');
+        prefersDark.addEventListener('change', (e) => {
+            document.body.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
+
+        // 检查本地存储
+        function checkAuth() {
+            const token = localStorage.getItem('githubToken');
+            const repo = localStorage.getItem('githubRepo');
+
+            if (token && repo) {
+                validateToken(token).then(valid => {
+                    if (valid) {
+                        authModal.style.display = 'none';
+                        fetchIssues(repo);
+                    } else {
+                        showAuthModal();
+                    }
+                });
+            } else {
+                showAuthModal();
+            }
+        }
+
+        // 显示认证弹窗
+        function showAuthModal() {
+            authModal.style.display = 'block';
+        }
+
+        // 验证Token
+        async function verifyToken() {
+            const token = tokenInput.value.trim();
+            if (!token) return;
+
+            const valid = await validateToken(token);
+            if (valid) {
+                errorMsg.textContent = '';
+                fetchRepos(token);
+                repoSelect.style.display = 'block';
+                saveBtn.style.display = 'block';
+            } else {
+                errorMsg.textContent = 'Invalid token or network error';
+            }
+        }
+
+        // 验证Token有效性
+        async function validateToken(token) {
+            try {
+                const response = await fetch('https://api.github.com/user', {
+                    headers: { Authorization: `token ${token}` }
+                });
+                return response.ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // 获取仓库列表
+        async function fetchRepos(token) {
+            try {
+                const response = await fetch('https://api.github.com/user/repos?per_page=100', {
+                    headers: { Authorization: `token ${token}` }
+                });
+                const repos = await response.json();
+                repoSelect.innerHTML = repos.map(repo =>
+                    `<option value="${repo.full_name}">${repo.name}</option>`
+                ).join('');
+            } catch (e) {
+                errorMsg.textContent = 'Failed to fetch repositories';
+            }
+        }
+
+        // 保存设置
+        function saveSettings() {
+            const token = tokenInput.value.trim();
+            const repo = repoSelect.value;
+
+            localStorage.setItem('githubToken', token);
+            localStorage.setItem('githubRepo', repo);
+
+            authModal.style.display = 'none';
+            fetchIssues(repo);
+        }
+
+        // 获取Issues
+        async function fetchIssues(repo) {
+            try {
+                const token = localStorage.getItem('githubToken');
+                const response = await fetch(`https://api.github.com/repos/${repo}/issues?state=all&per_page=100`, {
+                    headers: { Authorization: `token ${token}` }
+                });
+                const issues = await response.json();
+
+                const issueList = document.getElementById('issueList');
+                issueList.innerHTML = issues.map(issue =>
+                    `<div class="issue-item" onclick="showIssue('${escape(issue.body || '')}')">
+                        <h3>${issue.title}</h3>
+                    </div>`
+                ).join('');
+            } catch (e) {
+                alert('Failed to fetch issues');
+            }
+        }
+
+        // 显示Issue内容
+        function showIssue(body) {
+            const content = document.getElementById('issueContent');
+            content.innerHTML = marked.parse(unescape(body));
+        }
+
+        // 初始化
+        checkAuth();
+    </script>
+</body>
+
+</html>
