@@ -549,6 +549,7 @@
                     // On mobile, auto-collapse the sidebar after selection
                     if (window.innerWidth <= 768) {
                         sidebar.classList.add('collapsed');
+                        collapseBtn.classList.remove('active');
                     }
                 });
                 issueList.appendChild(issueItem);
