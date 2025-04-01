@@ -1,6 +1,6 @@
 # IssueReader
 
-This tool is able to view GitHub Issues. In fact, I use GitHub Issues to take notes, so I developed this tool using `Claude Sonnet 3.7` to make it easier for myself to review my notes.
+This tool is able to view GitHub Issues. In fact, I use GitHub Issues to take notes, so I developed this tool using `Claude Sonnet 3.7` and `v0` to make it easier for myself to review my notes.
 
 Here are the prompt I created and optimized:
 
