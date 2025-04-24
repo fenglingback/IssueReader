@@ -165,12 +165,13 @@
         }
 
         .sidebar-item {
-            padding: 12px 15px;
+            padding: 8px 15px;
             border-bottom: 1px solid var(--border-color);
             cursor: pointer;
             transition: background-color 0.1s;
             display: flex;
             flex-direction: column;
+            gap: 10px;
         }
 
         .sidebar-item:hover {
@@ -207,6 +208,14 @@
             color: var(--secondary-text);
             display: flex;
             justify-content: space-between;
+
+            & span:first-of-type {
+                color: #26a2a6;
+            }
+
+            & span:last-of-type {
+                align-self: flex-end;
+            }
         }
 
         .content {
@@ -644,24 +653,34 @@
                 headerTitle.textContent = `加载 ${repo} 的 issues...`;
 
                 try {
-                    const response = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&sort=updated`, {
-                        headers: {
-                            'Authorization': `token ${token}`
-                        }
-                    });
+                    let page = 1;
+                    while (true) {
+                        const response = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&sort=updated&per_page=100&page=${page}`, {
+                            headers: {
+                                'Authorization': `token ${token}`
+                            }
+                        });
 
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            localStorage.removeItem('githubToken');
-                            localStorage.removeItem('bjRepo');
-                            showTokenModal();
-                            tokenError.textContent = 'Token 已失效，请重新输入';
-                            return;
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                localStorage.removeItem('githubToken');
+                                localStorage.removeItem('bjRepo');
+                                showTokenModal();
+                                tokenError.textContent = 'Token 已失效，请重新输入';
+                                return;
+                            }
+                            throw new Error('获取 issues 失败');
                         }
-                        throw new Error('获取 issues 失败');
+
+                        const data = await response.json();
+                        issues = issues.concat(data);
+                        if (data.length < 100) {
+                            break;
+                        } else {
+                            page++;
+                        }
                     }
 
-                    issues = await response.json();
                     filteredIssues = [...issues];
 
                     if (issues.length === 0) {
@@ -710,14 +729,14 @@
                     const metaDiv = document.createElement('div');
                     metaDiv.className = 'sidebar-item-meta';
 
-                    const numberSpan = document.createElement('span');
-                    numberSpan.textContent = `#${issue.number}`;
+                    const labelSpan = document.createElement('span');
+                    labelSpan.textContent = issue.labels.map(label => label.name).join(' | ');
 
                     const dateSpan = document.createElement('span');
                     const date = new Date(issue.updated_at);
                     dateSpan.textContent = date.toLocaleDateString();
 
-                    metaDiv.appendChild(numberSpan);
+                    metaDiv.appendChild(labelSpan);
                     metaDiv.appendChild(dateSpan);
 
                     li.appendChild(titleDiv);
