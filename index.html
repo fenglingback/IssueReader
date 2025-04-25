@@ -395,7 +395,17 @@
             }
 
             .sidebar-toggle:hover {
-                background-color: transparent !important;
+                background-color: transparent;
+            }
+
+            .sidebar-toggle.active {
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .sidebar-toggle.active {
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
             }
 
             .sidebar.visible {
