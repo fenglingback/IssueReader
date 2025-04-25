@@ -394,6 +394,10 @@
                 max-width: 300px;
             }
 
+            .sidebar-toggle:hover {
+                background-color: none !important;
+            }
+
             .sidebar.visible {
                 transform: translateX(0);
             }
@@ -724,6 +728,8 @@
                     issueList.innerHTML = '<li style="padding: 15px; text-align: center;">没有匹配的 issues</li>';
                     return;
                 }
+
+                searchInput.setAttribute('placeholder', `在 ${filteredIssues.length} 个 issues 中搜索...`);
 
                 filteredIssues.forEach(issue => {
                     const li = document.createElement('li');
