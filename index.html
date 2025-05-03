@@ -19,6 +19,7 @@
             --border-color: #d0d7de;
             --secondary-text: #57606a;
             --sidebar-bg: #f6f8fa;
+            --hover-bg: #0000001a;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -28,6 +29,7 @@
                 --border-color: #30363d;
                 --secondary-text: #7d8590;
                 --sidebar-bg: #161b22;
+                --hover-bg: #ffffff1a;
             }
         }
 
@@ -69,17 +71,8 @@
             border-radius: 6px;
         }
 
-        .sidebar-toggle:hover,
         .sidebar-toggle.active {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-
-            .sidebar-toggle:hover,
-            .sidebar-toggle.active {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
+            background-color: var(--hover-bg);
         }
 
         .header-title {
@@ -105,16 +98,6 @@
             align-items: center;
             justify-content: center;
             border-radius: 6px;
-        }
-
-        .repo-switcher:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .repo-switcher:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
         }
 
         .container {
@@ -177,16 +160,6 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-        }
-
-        .sidebar-item:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .sidebar-item:hover {
-                background-color: rgba(255, 255, 255, 0.05);
-            }
         }
 
         .sidebar-item.active {
@@ -339,10 +312,6 @@
             border-color: #0969da;
         }
 
-        .modal-button.primary:hover {
-            background-color: #0a5dc2;
-        }
-
         .error-message {
             color: #cf222e;
             font-size: 14px;
@@ -383,6 +352,25 @@
             }
         }
 
+        @media (hover: hover) {
+
+            .sidebar-toggle:hover {
+                background-color: var(--hover-bg);
+            }
+
+            .sidebar-item:hover {
+                background-color: var(--hover-bg);
+            }
+
+            .repo-switcher:hover {
+                background-color: var(--hover-bg);
+            }
+
+            .modal-button.primary:hover {
+                background-color: #0a5dc2;
+            }
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -392,20 +380,6 @@
                 transform: translateX(-100%);
                 width: 80%;
                 max-width: 300px;
-            }
-
-            .sidebar-toggle:hover {
-                background-color: transparent;
-            }
-
-            .sidebar-toggle.active {
-                background-color: rgba(0, 0, 0, 0.1);
-            }
-
-            @media (prefers-color-scheme: dark) {
-                .sidebar-toggle.active {
-                    background-color: rgba(255, 255, 255, 0.1);
-                }
             }
 
             .sidebar.visible {
