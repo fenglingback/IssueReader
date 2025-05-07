@@ -544,6 +544,7 @@
             let debounceTimer = null;
             let sidebarCollapsed = false;
             let imageViewer = null;
+            const ghcdn = 'gh-proxy.com'; // 替换为你的 GitHub CDN 地址
 
             // 检查本地存储中的 token 和仓库
             function checkAuth() {
@@ -782,13 +783,30 @@
                 });
             }
 
+            // 替换 GitHub 官方图片链接为 第三方 CDN 加速链接
+            function replaceGithubImageLinks(md) {
+                return md.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+                    if (url.startsWith('https://github.com/') && url.endsWith('?raw=true')) {
+                        url = url.replace('?raw=true', '');
+                        url = url.replace('/blob/', '/');
+                        url = url.replace('https://github.com/', `https://${ghcdn}/https://raw.githubusercontent.com/`);
+                    } else if (url.startsWith('https://raw.githubusercontent.com/')) {
+                        url = url.replace('https://raw.githubusercontent.com/', `https://${ghcdn}/https://raw.githubusercontent.com/`);
+                    }
+                    return `![${alt}](${url})`;
+                })
+            };
+
             // 渲染选中的 issue 内容
             function renderIssue(issue) {
                 loading.style.display = 'flex';
                 markdownContent.style.display = 'none';
 
+                // 替换 GitHub 图片链接
+                const newBody = replaceGithubImageLinks(issue.body);
+
                 // 使用默认渲染
-                const cleanHtml = marked.parse(issue.body || '*没有内容*');
+                const cleanHtml = marked.parse(newBody || '*没有内容*');
 
                 // 延迟渲染以获得更好的性能
                 setTimeout(() => {
