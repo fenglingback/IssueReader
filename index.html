@@ -214,7 +214,7 @@
 
         @media (max-width: 767px) {
             .markdown-body {
-                padding: 15px 15px 40px 15px;
+                padding: 15px;
             }
         }
 
@@ -802,7 +802,9 @@
                 markdownContent.style.display = 'none';
 
                 // 替换 GitHub 图片链接
-                const newBody = replaceGithubImageLinks(issue.body);
+                let newBody = replaceGithubImageLinks(issue.body);
+
+                newBody += `\n<p style="text-align: center; font-size: 12px; font-style: italic; color: #999; margin: 30px 0 0;">Created at ${new Date(issue.created_at).toLocaleDateString()}</p>`;
 
                 // 使用默认渲染
                 const cleanHtml = marked.parse(newBody || '*没有内容*');
