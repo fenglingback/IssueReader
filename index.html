@@ -45,9 +45,11 @@
         .header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            gap: 10px;
             height: var(--header-height);
             border-bottom: 1px solid var(--border-color);
-            padding: 0 15px;
+            padding: 0 10px;
             position: fixed;
             width: 100%;
             top: 0;
@@ -57,14 +59,13 @@
             box-sizing: border-box;
         }
 
-        .sidebar-toggle {
+        .header-btn {
             background: none;
             border: none;
             color: var(--primary-text);
             cursor: pointer;
             font-size: 16px;
             padding: 8px;
-            margin-right: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -76,27 +77,11 @@
         }
 
         .header-title {
-            flex: 1;
             white-space: nowrap;
-            overflow-x: scroll;
+            overflow: auto;
             font-weight: 600;
-            padding: 0 10px;
-            text-align: center;
             color: var(--primary-text);
             text-decoration: none;
-        }
-
-        .repo-switcher {
-            background: none;
-            border: none;
-            color: var(--primary-text);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
         }
 
         .container {
@@ -216,6 +201,26 @@
             .markdown-body {
                 padding: 15px;
             }
+        }
+
+        .markdown-body pre {
+            background-color: #2f3e4fac;
+            border: 1px solid #3373bc;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .copybtn {
+            height: fit-content;
+            margin: .5rem .5rem 0 0;
+            cursor: pointer;
+        }
+
+        .markdown-body pre>code {
+            overflow: auto;
+            padding: 1rem;
         }
 
         .markdown-body code {
@@ -430,7 +435,7 @@
 
 <body>
     <div class="header">
-        <button class="sidebar-toggle" id="sidebarToggle">
+        <button class="sidebar-toggle header-btn" id="sidebarToggle">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd"
                     d="M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM8 5H4V19H8V5ZM10 5V19H20V5H10Z"
@@ -438,7 +443,7 @@
             </svg>
         </button>
         <a class="header-title" id="headerTitle" target="_blank">GitHub Issue 查看器</a>
-        <button class="repo-switcher" id="repoSwitcher">
+        <button class="repo-switcher header-btn" id="repoSwitcher">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd"
                     d="M16.0503 12.0498L21 16.9996L16.0503 21.9493L14.636 20.5351L17.172 17.9988L4 17.9996V15.9996L17.172 15.9988L14.636 13.464L16.0503 12.0498ZM7.94975 2.0498L9.36396 3.46402L6.828 5.9988L20 5.99955V7.99955L6.828 7.9988L9.36396 10.5351L7.94975 11.9493L3 6.99955L7.94975 2.0498Z"
@@ -849,12 +854,37 @@
                                 flipVertical: true,
                             },
                             backdrop: true,
-                            transition: false,
+                            transition: true,
                         };
 
                         // Initialize viewer.js with all images
                         imageViewer = new Viewer(markdownContent, options);
                     }
+
+                    let copycode;
+                    const pres = markdownContent.querySelectorAll('pre');
+                    pres.forEach(item => {
+                        let timeout;
+                        const copybtn = document.createElement('span');
+                        copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
+                        copybtn.className = 'copybtn';
+
+                        item.appendChild(copybtn);
+
+                        copybtn.addEventListener('click', () => {
+                            const text = item.firstElementChild.innerText;
+                            if (copycode || copycode !== text) {
+                                copycode = text;
+                                navigator.clipboard.writeText(text).then(() => {
+                                    copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M6 4V8H18V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H6ZM8 2H16V6H8V2Z"></path></svg>`;
+                                    if (timeout) clearTimeout(timeout);
+                                    timeout = setTimeout(() => {
+                                        copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
+                                    }, 2000);
+                                });
+                            }
+                        })
+                    });
 
                     loading.style.display = 'none';
                     markdownContent.style.display = 'block';
