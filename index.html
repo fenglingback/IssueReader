@@ -542,7 +542,6 @@
 
             // 状态变量
             let issues = [];
-            let filteredIssues = [];
             let currentRepo = '';
             let currentIssue = null;
             let debounceTimer = null;
@@ -706,8 +705,6 @@
                         }
                     }
 
-                    filteredIssues = [...issues];
-
                     if (issues.length === 0) {
                         issueList.innerHTML = '<li style="padding: 15px; text-align: center;">没有 issues</li>';
                         markdownContent.innerHTML = '<p>这个仓库没有 issues。</p>';
@@ -735,16 +732,9 @@
 
             // 渲染 issue 列表
             function renderIssueList() {
-                issueList.innerHTML = '';
+                searchInput.setAttribute('placeholder', `在 ${issues.length} 个 issues 中搜索...`);
 
-                if (filteredIssues.length === 0) {
-                    issueList.innerHTML = '<li style="padding: 15px; text-align: center;">没有匹配的 issues</li>';
-                    return;
-                }
-
-                searchInput.setAttribute('placeholder', `在 ${filteredIssues.length} 个 issues 中搜索...`);
-
-                filteredIssues.forEach(issue => {
+                issues.forEach(issue => {
                     const li = document.createElement('li');
                     li.className = 'sidebar-item';
                     li.dataset.id = issue.id;
@@ -785,6 +775,14 @@
 
                     issueList.appendChild(li);
                 });
+
+                const noMatches = document.createElement('li');
+                noMatches.id = 'noMatches';
+                noMatches.style.display = 'none';
+                noMatches.style.padding = '15px';
+                noMatches.style.textAlign = 'center';
+                noMatches.textContent = '没有匹配的 issues';
+                issueList.appendChild(noMatches);
             }
 
             // 替换 GitHub 官方图片链接为 第三方 CDN 加速链接
@@ -905,33 +903,22 @@
 
             // 搜索 issues
             function searchIssues(query) {
-                if (!query) {
-                    filteredIssues = [...issues];
-                } else {
-                    const lowerQuery = query.toLowerCase();
-                    filteredIssues = issues.filter(issue =>
-                        issue.title.toLowerCase().includes(lowerQuery)
-                    );
-                }
+                const filteredIssues = issues.filter(issue => {
+                    return issue.title.toLowerCase().includes(query.toLowerCase());
+                });
 
-                renderIssueList();
-
-                // 如果没有当前选中的 issue 或者当前选中的 issue 不在过滤后的列表中
-                if (!currentIssue || !filteredIssues.some(issue => issue.id === currentIssue.id)) {
-                    if (filteredIssues.length > 0) {
-                        currentIssue = filteredIssues[0];
-                        renderIssue(currentIssue);
-                        highlightCurrentIssue();
-                        headerTitle.textContent = currentIssue.title;
+                const items = issueList.querySelectorAll('.sidebar-item');
+                items.forEach(item => {
+                    const issueId = parseInt(item.dataset.id);
+                    const issue = filteredIssues.find(i => i.id === issueId);
+                    if (issue) {
+                        item.style.display = '';
                     } else {
-                        markdownContent.innerHTML = '<p>没有找到匹配的 issues。</p>';
-                        markdownContent.style.display = 'block';
-                        loading.style.display = 'none';
-                        headerTitle.textContent = '没有匹配的 issues';
+                        item.style.display = 'none';
                     }
-                } else {
-                    highlightCurrentIssue();
-                }
+                });
+
+                filteredIssues.length === 0 ? document.getElementById('noMatches').style.display = 'block' : document.getElementById('noMatches').style.display = 'none';
             }
 
             // 事件监听器
