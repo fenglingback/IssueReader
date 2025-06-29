@@ -231,11 +231,6 @@
             cursor: zoom-in;
         }
 
-        /* .markdown-body table {
-            display: table;
-            width: 100%;
-        } */
-
         .markdown-body a,
         .markdown-body a:hover {
             text-decoration: 1px underline;
@@ -547,7 +542,7 @@
             let debounceTimer = null;
             let sidebarCollapsed = false;
             let imageViewer = null;
-            const ghcdn = 'gh-proxy.com'; // 替换为你的 GitHub CDN 地址
+            const ghcdn = 'gitproxy.click'; // 替换为你的 GitHub CDN 地址
 
             // 检查本地存储中的 token 和仓库
             function checkAuth() {
