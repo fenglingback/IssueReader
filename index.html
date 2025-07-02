@@ -865,7 +865,7 @@
                         item.appendChild(copybtn);
 
                         copybtn.addEventListener('click', () => {
-                            const text = item.firstElementChild.innerText;
+                            const text = item.firstElementChild.innerText.trim();
                             if (copycode || copycode !== text) {
                                 copycode = text;
                                 navigator.clipboard.writeText(text).then(() => {
