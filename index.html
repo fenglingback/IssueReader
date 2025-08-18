@@ -7,9 +7,11 @@
     <title>GitHub Issue Viewer</title>
     <link type="image/png" rel="icon" href="https://img.icons8.com/material-outlined/24/read.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --header-height: 50px;
@@ -502,7 +504,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        window.onload = () => {
             // 初始化 marked.js
             marked.setOptions({
                 breaks: true,
@@ -879,6 +881,8 @@
                         })
                     });
 
+                    hljs.highlightAll();
+
                     loading.style.display = 'none';
                     markdownContent.style.display = 'block';
                 }, 50);
@@ -1052,7 +1056,7 @@
 
             // 初始化
             checkAuth();
-        });
+        };
     </script>
 </body>
 
