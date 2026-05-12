@@ -1069,6 +1069,39 @@
             checkAuth();
         });
     </script>
+
+    <!-- [优化-SW] 注册 Service Worker，实现 CDN 资源离线缓存 + 二次加载零延迟 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then((registration) => {
+                        console.log('[SW] 注册成功，作用域:', registration.scope);
+
+                        // 监听 Service Worker 更新
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('[SW] 发现新版本，正在安装...');
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    console.log('[SW] 新版本已激活，CDN 缓存已更新');
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.warn('[SW] 注册失败:', error);
+                    });
+
+                // 监听控制器变更（新 SW 激活后提示用户）
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('[SW] 控制器已切换，新 Service Worker 已接管');
+                });
+            });
+        } else {
+            console.warn('[SW] 当前浏览器不支持 Service Worker');
+        }
+    </script>
 </body>
 
 </html>
