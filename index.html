@@ -14,6 +14,8 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css" media="print"
         onload="this.media='all'">
     <!-- [优化1] JS 资源添加 defer，避免阻塞 HTML 解析 -->
+    <!-- [优化1-XSS] 引入 DOMPurify 防止 XSS 攻击 -->
+    <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -27,6 +29,10 @@
             --secondary-text: #57606a;
             --sidebar-bg: #f6f8fa;
             --hover-bg: #0000001a;
+            --accent-color: #0969da;
+            --accent-hover: #0a5dc2;
+            --accent-bg: rgba(9, 105, 218, 0.1);
+            --danger-color: #cf222e;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -37,6 +43,10 @@
                 --secondary-text: #7d8590;
                 --sidebar-bg: #161b22;
                 --hover-bg: #ffffff1a;
+                --accent-color: #2f81f7;
+                --accent-hover: #1a6fef;
+                --accent-bg: rgba(47, 129, 247, 0.1);
+                --danger-color: #ff7b72;
             }
         }
 
@@ -131,8 +141,8 @@
 
         .sidebar-search input:focus {
             outline: none;
-            border-color: #0969da;
-            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
         .sidebar-list {
@@ -154,18 +164,12 @@
         }
 
         .sidebar-item.active {
-            border-left: 3px solid #0969da;
-            background-color: rgba(9, 105, 218, 0.1);
+            border-left: 3px solid var(--accent-color);
+            background-color: var(--accent-bg);
         }
 
         .sidebar-item.active .sidebar-item-title {
             white-space: normal;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .sidebar-item.active {
-                background-color: rgba(47, 129, 247, 0.1);
-            }
         }
 
         .sidebar-item-title {
@@ -316,8 +320,8 @@
         .modal-body input:focus,
         .modal-body select:focus {
             outline: none;
-            border-color: #0969da;
-            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
         .modal-footer {
@@ -338,21 +342,15 @@
         }
 
         .modal-button.primary {
-            background-color: #0969da;
+            background-color: var(--accent-color);
             color: white;
-            border-color: #0969da;
+            border-color: var(--accent-color);
         }
 
         .error-message {
-            color: #cf222e;
+            color: var(--danger-color);
             font-size: 14px;
             margin-top: 5px;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .error-message {
-                color: #ff7b72;
-            }
         }
 
         .loading {
@@ -366,7 +364,7 @@
         .spinner {
             border: 3px solid rgba(0, 0, 0, 0.1);
             border-radius: 50%;
-            border-top: 3px solid #0969da;
+            border-top: 3px solid var(--accent-color);
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
@@ -398,7 +396,7 @@
             }
 
             .modal-button.primary:hover {
-                background-color: #0a5dc2;
+                background-color: var(--accent-hover);
             }
         }
 
@@ -510,7 +508,8 @@
     </div>
 
     <script>
-        window.onload = () => {
+        // [优化4] 使用 DOMContentLoaded 替代 window.onload，无需等待图片等资源加载完毕
+        document.addEventListener('DOMContentLoaded', () => {
             // 初始化 marked.js
             marked.setOptions({
                 breaks: true,
@@ -550,6 +549,8 @@
             let debounceTimer = null;
             let sidebarCollapsed = false;
             let imageViewer = null;
+            let activeItemEl = null; // [优化7] 缓存当前高亮的侧边栏元素，避免全量遍历
+            let renderAbortController = null; // [优化9] AbortController，用于取消过时的渲染请求
             const GH_CDN = 'gh-proxy.com'; // GitHub CDN 代理地址
             const DEBOUNCE_DELAY = 300; // 搜索防抖延迟（原500ms，降低以提升响应性）
 
@@ -713,7 +714,8 @@
                         }
 
                         const data = await response.json();
-                        issues = issues.concat(data);
+                        // [优化6] 使用 push + spread 替代 concat，避免每次创建新数组
+                        issues.push(...data);
                         if (data.length < 100) {
                             break;
                         } else {
@@ -734,13 +736,15 @@
 
                     // 默认显示最新的 issue
                     currentIssue = issues[0];
+                    // [优化7] 高亮第一个侧边栏项，使用缓存引用
+                    const firstItem = issueList.querySelector('.sidebar-item');
                     renderIssue(currentIssue);
-                    highlightCurrentIssue();
+                    highlightCurrentIssue(firstItem);
                     headerTitle.textContent = currentIssue.title;
                     headerTitle.href = currentIssue.html_url;
                 } catch (error) {
                     console.error('加载 issues 失败:', error);
-                    issueList.innerHTML = '<li style="padding: 15px; text-align: center; color: #cf222e;">加载 issues 失败</li>';
+                    issueList.innerHTML = `<li style="padding: 15px; text-align: center; color: var(--danger-color);">加载 issues 失败</li>`;
                     loading.style.display = 'none';
                     headerTitle.textContent = '加载失败';
                 }
@@ -752,6 +756,7 @@
 
                 const fragment = document.createDocumentFragment();
 
+                // [优化5] 不再为每个 li 单独绑定 click 监听器，改用事件委托
                 issues.forEach(issue => {
                     const li = document.createElement('li');
                     li.className = 'sidebar-item';
@@ -776,20 +781,6 @@
 
                     li.appendChild(titleDiv);
                     li.appendChild(metaDiv);
-
-                    li.addEventListener('click', () => {
-                        currentIssue = issue;
-                        renderIssue(issue);
-                        highlightCurrentIssue();
-                        headerTitle.textContent = issue.title;
-                        headerTitle.href = issue.html_url;
-
-                        // 在移动设备上点击后隐藏侧边栏
-                        if (window.innerWidth <= 768) {
-                            sidebar.classList.remove('visible');
-                            sidebarToggle.classList.remove('active');
-                        }
-                    });
 
                     fragment.appendChild(li);
                 });
@@ -825,6 +816,11 @@
             // [优化7] 修复 issue.body 为 null 时的崩溃
             // [优化8] 修复 copycode 逻辑错误 + 使用事件委托减少监听器
             function renderIssue(issue) {
+                // [优化9] 取消前一次尚未完成的渲染请求，防止竞态
+                if (renderAbortController) renderAbortController.abort();
+                const ac = new AbortController();
+                renderAbortController = ac;
+
                 loading.style.display = 'flex';
                 markdownContent.style.display = 'none';
 
@@ -833,8 +829,12 @@
 
                 newBody += `\n<p style="text-align: center; font-size: 12px; font-style: italic; color: #999; margin: 30px 0 0;">Created at ${new Date(issue.created_at).toLocaleDateString()}</p>`;
 
-                // 使用默认渲染
-                const cleanHtml = marked.parse(newBody || '*没有内容*');
+                // [优化1-XSS] 使用 DOMPurify 净化 marked 输出，防止 XSS
+                const rawHtml = marked.parse(newBody || '*没有内容*');
+                const cleanHtml = DOMPurify.sanitize(rawHtml);
+
+                // [优化9] 若已被更新的请求取消，则放弃本次渲染
+                if (ac.signal.aborted) return;
 
                 // [优化2] 直接渲染，移除 setTimeout 延迟
                 markdownContent.innerHTML = cleanHtml;
@@ -854,6 +854,11 @@
                 }
 
                 const images = markdownContent.querySelectorAll('img');
+
+                // [优化8] 为所有图片添加懒加载
+                images.forEach(img => {
+                    img.loading = 'lazy';
+                });
 
                 if (images.length > 0) {
                     const options = {
@@ -915,16 +920,11 @@
                 });
             });
 
-            // 高亮当前选中的 issue
-            function highlightCurrentIssue() {
-                const items = issueList.querySelectorAll('.sidebar-item');
-                items.forEach(item => {
-                    if (parseInt(item.dataset.id) === currentIssue.id) {
-                        item.classList.add('active');
-                    } else {
-                        item.classList.remove('active');
-                    }
-                });
+            // [优化7] 高亮当前选中的 issue，使用缓存引用避免全量遍历
+            function highlightCurrentIssue(newItemEl) {
+                if (activeItemEl) activeItemEl.classList.remove('active');
+                if (newItemEl) newItemEl.classList.add('active');
+                activeItemEl = newItemEl;
             }
 
             // [优化5] 搜索优化：使用 Set 替代 Array.find，复杂度从 O(n*m) 降为 O(n+m)
@@ -1043,9 +1043,64 @@
                 showRepoModal();
             });
 
+            // [优化5] 使用事件委托处理 sidebar-item 点击，替代每个 li 单独绑定监听器
+            issueList.addEventListener('click', (e) => {
+                const li = e.target.closest('.sidebar-item');
+                if (!li) return;
+
+                const issueId = parseInt(li.dataset.id);
+                const issue = issues.find(i => i.id === issueId);
+                if (!issue) return;
+
+                currentIssue = issue;
+                renderIssue(issue);
+                highlightCurrentIssue(li);
+                headerTitle.textContent = issue.title;
+                headerTitle.href = issue.html_url;
+
+                // 在移动设备上点击后隐藏侧边栏
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('visible');
+                    sidebarToggle.classList.remove('active');
+                }
+            });
+
             // 初始化
             checkAuth();
-        };
+        });
+    </script>
+
+    <!-- [优化-SW] 注册 Service Worker，实现 CDN 资源离线缓存 + 二次加载零延迟 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then((registration) => {
+                        console.log('[SW] 注册成功，作用域:', registration.scope);
+
+                        // 监听 Service Worker 更新
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('[SW] 发现新版本，正在安装...');
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    console.log('[SW] 新版本已激活，CDN 缓存已更新');
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.warn('[SW] 注册失败:', error);
+                    });
+
+                // 监听控制器变更（新 SW 激活后提示用户）
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('[SW] 控制器已切换，新 Service Worker 已接管');
+                });
+            });
+        } else {
+            console.warn('[SW] 当前浏览器不支持 Service Worker');
+        }
     </script>
 </body>
 
