@@ -6,12 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitHub Issue Viewer</title>
     <link type="image/png" rel="icon" href="https://img.icons8.com/material-outlined/24/read.png">
+    <!-- [优化1] 关键CSS同步加载，非关键CSS异步加载 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css" media="print"
+        onload="this.media='all'">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css" media="print"
+        onload="this.media='all'">
+    <!-- [优化1] JS 资源添加 defer，避免阻塞 HTML 解析 -->
+    <script defer src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --header-height: 50px;
@@ -151,10 +156,10 @@
         .sidebar-item.active {
             border-left: 3px solid #0969da;
             background-color: rgba(9, 105, 218, 0.1);
+        }
 
-            & .sidebar-item-title {
-                white-space: normal;
-            }
+        .sidebar-item.active .sidebar-item-title {
+            white-space: normal;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -176,14 +181,14 @@
             color: var(--secondary-text);
             display: flex;
             justify-content: space-between;
+        }
 
-            & span:first-of-type {
-                color: #26a2a6;
-            }
+        .sidebar-item-meta span:first-of-type {
+            color: #26a2a6;
+        }
 
-            & span:last-of-type {
-                align-self: flex-end;
-            }
+        .sidebar-item-meta span:last-of-type {
+            align-self: flex-end;
         }
 
         .content {
@@ -235,7 +240,8 @@
 
         .markdown-body a,
         .markdown-body a:hover {
-            text-decoration: 1px underline;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
             text-underline-position: under;
         }
 
@@ -544,7 +550,12 @@
             let debounceTimer = null;
             let sidebarCollapsed = false;
             let imageViewer = null;
-            const ghcdn = 'gh-proxy.com'; // 替换为你的 GitHub CDN 地址
+            const GH_CDN = 'gh-proxy.com'; // GitHub CDN 代理地址
+            const DEBOUNCE_DELAY = 300; // 搜索防抖延迟（原500ms，降低以提升响应性）
+
+            // [优化8] 复制按钮 SVG 图标模板，避免重复创建 HTML 字符串
+            const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
+            const COPIED_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M6 4V8H18V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H6ZM8 2H16V6H8V2Z"></path></svg>`;
 
             // 检查本地存储中的 token 和仓库
             function checkAuth() {
@@ -587,7 +598,7 @@
                 }
 
                 repoModal.style.display = 'flex';
-                fetchRepos(token);
+                fetchRepos(token, newRepoSelect);
             }
 
             // 隐藏仓库切换模态框
@@ -616,10 +627,10 @@
                 }
             }
 
-            // 获取用户仓库列表
-            async function fetchRepos(token) {
-                newRepoSelect.innerHTML = '<option value="">加载中...</option>';
-                newRepoSelect.disabled = true;
+            // [优化4] 统一的仓库列表获取函数，消除重复代码
+            async function fetchRepos(token, selectEl) {
+                selectEl.innerHTML = '<option value="">加载中...</option>';
+                selectEl.disabled = true;
 
                 try {
                     const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
@@ -634,41 +645,49 @@
                     }
 
                     const repos = await response.json();
-                    newRepoSelect.innerHTML = '';
+                    selectEl.innerHTML = '';
 
                     if (repos.length === 0) {
-                        newRepoSelect.innerHTML = '<option value="">没有可用的仓库</option>';
+                        selectEl.innerHTML = '<option value="">没有可用的仓库</option>';
                         return;
                     }
 
                     // 按仓库名的字母顺序排序
                     repos.sort((a, b) => a.full_name.localeCompare(b.full_name));
 
+                    // [优化6] 使用 DocumentFragment 批量插入 option
+                    const fragment = document.createDocumentFragment();
                     repos.forEach(repo => {
                         const option = document.createElement('option');
                         option.value = repo.full_name;
                         option.textContent = repo.full_name;
-                        newRepoSelect.appendChild(option);
+                        fragment.appendChild(option);
                     });
+                    selectEl.appendChild(fragment);
 
-                    newRepoSelect.disabled = false;
+                    selectEl.disabled = false;
 
                     // 默认选中当前仓库
                     if (currentRepo) {
-                        newRepoSelect.value = currentRepo;
+                        selectEl.value = currentRepo;
                     }
                 } catch (error) {
                     console.error('获取仓库列表失败:', error);
-                    newRepoSelect.innerHTML = '<option value="">加载失败</option>';
-                    newRepoError.textContent = '获取仓库列表失败，请重试';
+                    selectEl.innerHTML = '<option value="">加载失败</option>';
+                    // 根据目标 select 设置对应错误提示
+                    if (selectEl === newRepoSelect) {
+                        newRepoError.textContent = '获取仓库列表失败，请重试';
+                    } else {
+                        repoError.textContent = '获取仓库列表失败，请重试';
+                    }
                 }
             }
-
 
             // 加载 issue 列表
             async function loadIssues(token, repo) {
                 loading.style.display = 'flex';
                 markdownContent.style.display = 'none';
+                markdownContent.innerHTML = ''; // [优化] 切换仓库时立即清空旧内容
                 issueList.innerHTML = '';
                 headerTitle.textContent = `加载 ${repo} 的 issues...`;
 
@@ -727,9 +746,11 @@
                 }
             }
 
-            // 渲染 issue 列表
+            // [优化6] 使用 DocumentFragment 批量渲染 issue 列表，减少 DOM 重排
             function renderIssueList() {
                 searchInput.setAttribute('placeholder', `在 ${issues.length} 个 issues 中搜索...`);
+
+                const fragment = document.createDocumentFragment();
 
                 issues.forEach(issue => {
                     const li = document.createElement('li');
@@ -770,7 +791,7 @@
                         }
                     });
 
-                    issueList.appendChild(li);
+                    fragment.appendChild(li);
                 });
 
                 const noMatches = document.createElement('li');
@@ -779,114 +800,120 @@
                 noMatches.style.padding = '15px';
                 noMatches.style.textAlign = 'center';
                 noMatches.textContent = '没有匹配的 issues';
-                issueList.appendChild(noMatches);
+                fragment.appendChild(noMatches);
+
+                // 一次性插入所有 DOM 节点
+                issueList.appendChild(fragment);
             }
 
-            // 替换 GitHub 官方图片链接为 第三方 CDN 加速链接
+            // 替换 GitHub 官方图片链接为第三方 CDN 加速链接
             function replaceGithubImageLinks(md) {
                 return md.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
                     if (url.startsWith('https://github.com/') && url.endsWith('?raw=true')) {
                         url = url.replace('?raw=true', '');
                         url = url.replace('/blob/', '/');
-                        url = url.replace('https://github.com/', `https://${ghcdn}/https://raw.githubusercontent.com/`);
+                        url = url.replace('https://github.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
                     } else if (url.startsWith('https://raw.githubusercontent.com/')) {
-                        url = url.replace('https://raw.githubusercontent.com/', `https://${ghcdn}/https://raw.githubusercontent.com/`);
+                        url = url.replace('https://raw.githubusercontent.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
                     }
                     return `![${alt}](${url})`;
-                })
-            };
+                });
+            }
 
-            // 渲染选中的 issue 内容
+            // [优化2] 去掉无意义的 setTimeout(fn, 50)，直接同步渲染
+            // [优化3] hljs.highlightAll() 改为局部高亮，避免全页扫描
+            // [优化7] 修复 issue.body 为 null 时的崩溃
+            // [优化8] 修复 copycode 逻辑错误 + 使用事件委托减少监听器
             function renderIssue(issue) {
                 loading.style.display = 'flex';
                 markdownContent.style.display = 'none';
 
-                // 替换 GitHub 图片链接
-                let newBody = replaceGithubImageLinks(issue.body);
+                // [优化7] issue.body 可能为 null，做防御性处理
+                let newBody = replaceGithubImageLinks(issue.body || '');
 
                 newBody += `\n<p style="text-align: center; font-size: 12px; font-style: italic; color: #999; margin: 30px 0 0;">Created at ${new Date(issue.created_at).toLocaleDateString()}</p>`;
 
                 // 使用默认渲染
                 const cleanHtml = marked.parse(newBody || '*没有内容*');
 
-                // 延迟渲染以获得更好的性能
-                setTimeout(() => {
-                    markdownContent.innerHTML = cleanHtml;
+                // [优化2] 直接渲染，移除 setTimeout 延迟
+                markdownContent.innerHTML = cleanHtml;
 
-                    // 处理所有链接：添加target="_blank"和rel="noopener noreferrer"
-                    const links = markdownContent.querySelectorAll('a');
-                    links.forEach(link => {
-                        // 如果不是锚点链接（不以#开头）
-                        if (!link.getAttribute('href')?.startsWith('#')) {
-                            link.setAttribute('target', '_blank');
-                            link.setAttribute('rel', 'noopener noreferrer');
-                        }
-                    });
-
-                    // 销毁旧的查看器实例（如果有）
-                    if (imageViewer) {
-                        imageViewer.destroy();
+                // 处理所有链接：添加target="_blank"和rel="noopener noreferrer"
+                const links = markdownContent.querySelectorAll('a');
+                links.forEach(link => {
+                    if (!link.getAttribute('href')?.startsWith('#')) {
+                        link.setAttribute('target', '_blank');
+                        link.setAttribute('rel', 'noopener noreferrer');
                     }
+                });
 
-                    // Get all images in the issue body
-                    const images = markdownContent.querySelectorAll('img');
+                // 销毁旧的查看器实例（如果有）
+                if (imageViewer) {
+                    imageViewer.destroy();
+                }
 
-                    if (images.length > 0) {
-                        // Configure image viewer options
-                        const options = {
-                            navbar: false,
-                            title: false,
-                            toolbar: {
-                                zoomIn: true,
-                                zoomOut: true,
-                                oneToOne: true,
-                                reset: true,
-                                prev: images.length > 1 ? true : false,
-                                next: images.length > 1 ? true : false,
-                                rotateLeft: true,
-                                rotateRight: true,
-                                flipHorizontal: true,
-                                flipVertical: true,
-                            },
-                            backdrop: true,
-                            transition: true,
-                        };
+                const images = markdownContent.querySelectorAll('img');
 
-                        // Initialize viewer.js with all images
-                        imageViewer = new Viewer(markdownContent, options);
-                    }
+                if (images.length > 0) {
+                    const options = {
+                        navbar: false,
+                        title: false,
+                        toolbar: {
+                            zoomIn: true,
+                            zoomOut: true,
+                            oneToOne: true,
+                            reset: true,
+                            prev: images.length > 1,
+                            next: images.length > 1,
+                            rotateLeft: true,
+                            rotateRight: true,
+                            flipHorizontal: true,
+                            flipVertical: true,
+                        },
+                        backdrop: true,
+                        transition: true,
+                    };
 
-                    let copycode;
-                    const pres = markdownContent.querySelectorAll('pre');
-                    pres.forEach(item => {
-                        let timeout;
-                        const copybtn = document.createElement('span');
-                        copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
-                        copybtn.className = 'copybtn';
+                    imageViewer = new Viewer(markdownContent, options);
+                }
 
-                        item.appendChild(copybtn);
+                // 为代码块添加复制按钮
+                const pres = markdownContent.querySelectorAll('pre');
+                pres.forEach(item => {
+                    const copybtn = document.createElement('span');
+                    copybtn.innerHTML = COPY_ICON;
+                    copybtn.className = 'copybtn';
+                    item.appendChild(copybtn);
+                });
 
-                        copybtn.addEventListener('click', () => {
-                            const text = item.firstElementChild.innerText.trim();
-                            if (copycode || copycode !== text) {
-                                copycode = text;
-                                navigator.clipboard.writeText(text).then(() => {
-                                    copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M6 4V8H18V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H6ZM8 2H16V6H8V2Z"></path></svg>`;
-                                    if (timeout) clearTimeout(timeout);
-                                    timeout = setTimeout(() => {
-                                        copybtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
-                                    }, 2000);
-                                });
-                            }
-                        })
-                    });
+                // [优化3] 局部高亮：仅高亮 markdownContent 内的代码块，而非全页面
+                markdownContent.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
 
-                    hljs.highlightAll();
-
-                    loading.style.display = 'none';
-                    markdownContent.style.display = 'block';
-                }, 50);
+                loading.style.display = 'none';
+                markdownContent.style.display = 'block';
             }
+
+            // [优化8] 使用事件委托处理复制按钮点击，替代为每个按钮单独添加监听器
+            markdownContent.addEventListener('click', (e) => {
+                const copybtn = e.target.closest('.copybtn');
+                if (!copybtn) return;
+
+                const pre = copybtn.closest('pre');
+                if (!pre) return;
+
+                const text = pre.firstElementChild?.innerText?.trim();
+                if (!text) return;
+
+                navigator.clipboard.writeText(text).then(() => {
+                    copybtn.innerHTML = COPIED_ICON;
+                    setTimeout(() => {
+                        copybtn.innerHTML = COPY_ICON;
+                    }, 2000);
+                });
+            });
 
             // 高亮当前选中的 issue
             function highlightCurrentIssue() {
@@ -900,27 +927,26 @@
                 });
             }
 
-            // 搜索 issues
+            // [优化5] 搜索优化：使用 Set 替代 Array.find，复杂度从 O(n*m) 降为 O(n+m)
             function searchIssues(query) {
-                const filteredIssues = issues.filter(issue => {
-                    return issue.title.toLowerCase().includes(query.toLowerCase());
-                });
+                const lowerQuery = query.toLowerCase();
+                const matchedIds = new Set(
+                    issues
+                        .filter(issue => issue.title.toLowerCase().includes(lowerQuery))
+                        .map(issue => issue.id)
+                );
 
                 const items = issueList.querySelectorAll('.sidebar-item');
                 items.forEach(item => {
                     const issueId = parseInt(item.dataset.id);
-                    const issue = filteredIssues.find(i => i.id === issueId);
-                    if (issue) {
-                        item.style.display = '';
-                    } else {
-                        item.style.display = 'none';
-                    }
+                    item.style.display = matchedIds.has(issueId) ? '' : 'none';
                 });
 
-                filteredIssues.length === 0 ? document.getElementById('noMatches').style.display = 'block' : document.getElementById('noMatches').style.display = 'none';
+                document.getElementById('noMatches').style.display = matchedIds.size === 0 && query ? 'block' : 'none';
             }
 
             // 事件监听器
+            // [优化4] verifyButton 处理器复用 fetchRepos 函数，消除重复代码
             verifyButton.addEventListener('click', async () => {
                 const token = githubTokenInput.value.trim();
 
@@ -941,42 +967,8 @@
                     saveButton.style.display = 'block';
                     repoSelect.disabled = false;
 
-                    // 加载仓库列表 - 修改这部分
-                    try {
-                        repoSelect.innerHTML = '<option value="">加载仓库中...</option>';
-                        const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
-                            headers: {
-                                'Authorization': `token ${token}`,
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('获取仓库列表失败');
-                        }
-
-                        const repos = await response.json();
-                        repoSelect.innerHTML = '';
-
-                        if (repos.length === 0) {
-                            repoSelect.innerHTML = '<option value="">没有可用的仓库</option>';
-                            return;
-                        }
-
-                        // 按仓库名的字母顺序排序
-                        repos.sort((a, b) => a.full_name.localeCompare(b.full_name));
-
-                        repos.forEach(repo => {
-                            const option = document.createElement('option');
-                            option.value = repo.full_name;
-                            option.textContent = repo.full_name;
-                            repoSelect.appendChild(option);
-                        });
-                    } catch (error) {
-                        console.error('获取仓库列表失败:', error);
-                        repoSelect.innerHTML = '<option value="">加载失败</option>';
-                        repoError.textContent = '获取仓库列表失败，请重试';
-                    }
+                    // [优化4] 复用统一的 fetchRepos 函数
+                    await fetchRepos(token, repoSelect);
                 } else {
                     tokenError.textContent = '无效的 token，请重试';
                 }
@@ -1004,7 +996,6 @@
             cancelButton.addEventListener('click', () => {
                 hideTokenModal();
 
-                // 如果没有任何 token 和仓库，保持模态框打开
                 if (!localStorage.getItem('githubToken') || !localStorage.getItem('bjRepo')) {
                     showTokenModal();
                 }
@@ -1033,16 +1024,14 @@
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     searchIssues(searchInput.value.trim());
-                }, 500);
+                }, DEBOUNCE_DELAY);
             });
 
             sidebarToggle.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
-                    // 移动端：切换侧边栏可见性
                     sidebar.classList.toggle('visible');
                     sidebarToggle.classList.toggle('active');
                 } else {
-                    // 桌面端：切换侧边栏折叠状态
                     sidebarCollapsed = !sidebarCollapsed;
                     sidebar.classList.toggle('collapsed');
                     sidebarToggle.classList.toggle('active');
