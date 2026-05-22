@@ -109,13 +109,18 @@
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow-x: auto;
+            overflow-y: hidden;
             font-weight: 600;
             color: var(--primary-text);
             text-decoration: none;
             max-width: calc(100% - 160px);
             text-align: center;
+            scrollbar-width: none;
+        }
+
+        .header-title::-webkit-scrollbar {
+            display: none;
         }
 
         /* Header action buttons (create mode) */
@@ -514,54 +519,50 @@
             overflow: hidden;
         }
 
-        .editor-tabs {
-            display: flex;
-            padding: 12px 16px 0;
-            gap: 0;
-        }
-
-        .editor-tab {
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-            border-bottom: none;
-            border-radius: 6px 6px 0 0;
-            background-color: var(--button-bg);
-            color: var(--secondary-text);
-            transition: all 0.15s;
-            position: relative;
-            bottom: -1px;
-        }
-
-        .editor-tab.active {
-            background-color: var(--primary-bg);
-            color: var(--accent-color);
-            border-bottom: 1px solid var(--primary-bg);
-            z-index: 1;
-        }
-
-        .editor-tab:not(.active):hover {
-            color: var(--primary-text);
-            background-color: var(--hover-bg);
-        }
-
         .editor-pane {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 0 16px 16px;
+            padding: 16px;
         }
 
         .editor-pane-inner {
             flex: 1;
             border: 1px solid var(--border-color);
-            border-radius: 0 6px 6px 6px;
+            border-radius: 6px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            position: relative;
+        }
+
+        .preview-toggle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 5;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s, background-color 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .preview-toggle:hover {
+            color: var(--primary-text);
+            background-color: var(--hover-bg);
+        }
+
+        .preview-toggle.active {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
         }
 
         .editor-write,
@@ -599,8 +600,10 @@
         .editor-preview-pane .preview-content {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 16px;
             background-color: var(--preview-bg);
+            width: 100%;
         }
 
         .editor-preview-pane .preview-content .markdown-body {
@@ -608,10 +611,21 @@
             color: var(--primary-text);
             max-width: none;
             padding: 0;
+            width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .editor-preview-pane .preview-content .markdown-body pre {
             background-color: #1e1e1e;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .editor-preview-pane .preview-content .markdown-body table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
         }
 
         .editor-preview-pane .preview-content .markdown-body strong {
@@ -857,7 +871,7 @@
             }
 
             .header-title {
-                max-width: calc(100% - 120px);
+                max-width: calc(100% - 100px);
             }
 
             .create-toolbar {
@@ -971,12 +985,13 @@
             </div>
         </div>
         <div class="create-main">
-            <div class="editor-tabs">
-                <button class="editor-tab active" id="tabWrite">编写</button>
-                <button class="editor-tab" id="tabPreview">预览</button>
-            </div>
             <div class="editor-pane">
                 <div class="editor-pane-inner">
+                    <button class="preview-toggle" id="previewToggle" title="预览">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 2C4.5 2 1.5 5.5 1.5 8s3 6 6.5 6 6.5-3.5 6.5-6-3-6-6.5-6Zm0 10.5c-2.5 0-5-2.5-5-4.5S5.5 3 8 3s5 2.5 5 4.5-2.5 5-5 5Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 5a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"></path>
+                        </svg>
+                    </button>
                     <div class="editor-write active" id="editorWrite">
                         <textarea id="contentInput" placeholder="用 Markdown 编写 Issue 内容..."></textarea>
                     </div>
@@ -1096,8 +1111,7 @@
             const titleInput = document.getElementById('titleInput');
             const contentInput = document.getElementById('contentInput');
             const editorPreview = document.getElementById('editorPreview');
-            const tabWrite = document.getElementById('tabWrite');
-            const tabPreview = document.getElementById('tabPreview');
+            const previewToggle = document.getElementById('previewToggle');
             const editorWrite = document.getElementById('editorWrite');
             const editorPreviewPane = document.getElementById('editorPreviewPane');
             const importDropdown = document.getElementById('importDropdown');
@@ -1647,21 +1661,22 @@
             function switchEditorTab(tab) {
                 editorTab = tab;
                 if (tab === 'write') {
-                    tabWrite.classList.add('active');
-                    tabPreview.classList.remove('active');
                     editorWrite.classList.add('active');
                     editorPreviewPane.classList.remove('active');
+                    previewToggle.classList.remove('active');
+                    previewToggle.title = '预览';
                 } else {
-                    tabPreview.classList.add('active');
-                    tabWrite.classList.remove('active');
                     editorPreviewPane.classList.add('active');
                     editorWrite.classList.remove('active');
+                    previewToggle.classList.add('active');
+                    previewToggle.title = '编辑';
                     updateEditorPreview();
                 }
             }
 
-            tabWrite.addEventListener('click', () => switchEditorTab('write'));
-            tabPreview.addEventListener('click', () => switchEditorTab('preview'));
+            previewToggle.addEventListener('click', () => {
+                switchEditorTab(editorTab === 'write' ? 'preview' : 'write');
+            });
 
             function updateEditorPreview() {
                 editorPreview.innerHTML = marked.parse(contentInput.value || '*没有内容可预览*');
