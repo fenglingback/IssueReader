@@ -113,32 +113,119 @@
             flex: 1;
         }
 
-        /* Tab navigation */
-        .header-tabs {
+        /* Menu dropdown */
+        .menu-dropdown {
+            position: relative;
+        }
+
+        .menu-btn {
             display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
+            background-color: var(--button-bg);
+            color: var(--primary-text);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: background-color 0.15s;
+        }
+
+        .menu-btn:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .menu-dropdown.open .menu-btn {
+            background-color: var(--hover-bg);
+        }
+
+        .menu-btn .menu-chevron {
+            transition: transform 0.2s;
+        }
+
+        .menu-dropdown.open .menu-chevron {
+            transform: rotate(180deg);
+        }
+
+        .menu-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 200;
             overflow: hidden;
         }
 
-        .header-tab {
-            padding: 6px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            background-color: var(--button-bg);
+        .menu-dropdown.open .menu-panel {
+            display: block;
+        }
+
+        .menu-section-title {
+            padding: 8px 14px 4px;
+            font-size: 11px;
+            font-weight: 600;
             color: var(--secondary-text);
-            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .header-tab.active {
-            background-color: var(--accent-color);
-            color: white;
+        .menu-divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 4px 0;
         }
 
-        .header-tab:not(.active):hover {
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 14px;
+            border: none;
+            background: none;
+            color: var(--primary-text);
+            cursor: pointer;
+            font-size: 14px;
+            text-align: left;
+            transition: background-color 0.1s;
+        }
+
+        .menu-item:hover {
             background-color: var(--hover-bg);
+        }
+
+        .menu-item.active {
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+
+        .menu-item .item-check {
+            width: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .menu-item .item-icon {
+            width: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--secondary-text);
+        }
+
+        .menu-item.active .item-icon {
+            color: var(--accent-color);
         }
 
         /* ==================== View Mode (index1) ==================== */
@@ -779,10 +866,6 @@
                 padding: 0 10px;
             }
 
-            .header-tabs {
-                margin: 0 auto;
-            }
-
             .header-title {
                 display: none;
             }
@@ -822,17 +905,43 @@
             </svg>
         </button>
         <a class="header-title" id="headerTitle" target="_blank">GitHub Issue 管理器</a>
-        <div class="header-tabs">
-            <button class="header-tab active" data-mode="view" id="tabView">查看 Issue</button>
-            <button class="header-tab" data-mode="create" id="tabCreate">创建 Issue</button>
+        <div class="menu-dropdown" id="menuDropdown">
+            <button class="menu-btn" id="menuBtn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm6.25 3.5v-1h1v1h-1Zm.75-8a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8.5 3.5Z"></path>
+                </svg>
+                <span id="menuLabel">查看 Issue</span>
+                <svg class="menu-chevron" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <path d="M2.22 4.47a.75.75 0 0 1 1.06 0L6 7.19l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L2.22 5.53a.75.75 0 0 1 0-1.06Z"></path>
+                </svg>
+            </button>
+            <div class="menu-panel">
+                <div class="menu-section-title">功能</div>
+                <button class="menu-item active" id="menuView">
+                    <span class="item-check">✓</span>
+                    <span class="item-icon">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>
+                    </span>
+                    查看 Issue
+                </button>
+                <button class="menu-item" id="menuCreate">
+                    <span class="item-check"></span>
+                    <span class="item-icon">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>
+                    </span>
+                    创建 Issue
+                </button>
+                <hr class="menu-divider">
+                <div class="menu-section-title">仓库</div>
+                <button class="menu-item" id="menuSwitchRepo">
+                    <span class="item-check"></span>
+                    <span class="item-icon">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.22 9.95a3.5 3.5 0 0 1-4.45 4.45L7.02 16.15a5.5 5.5 0 0 0 7.13-7.13l-1.93 1.93ZM2.78 6.05a3.5 3.5 0 0 1 4.45-4.45L8.98-.15a5.5 5.5 0 0 0-7.13 7.13l1.93-1.93ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"></path></svg>
+                    </span>
+                    切换仓库
+                </button>
+            </div>
         </div>
-        <button class="header-btn" id="repoSwitcher" title="切换仓库">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M16.0503 12.0498L21 16.9996L16.0503 21.9493L14.636 20.5351L17.172 17.9988L4 17.9996V15.9996L17.172 15.9988L14.636 13.464L16.0503 12.0498ZM7.94975 2.0498L9.36396 3.46402L6.828 5.9988L20 5.99955V7.99955L6.828 7.9988L9.36396 10.5351L7.94975 11.9493L3 6.99955L7.94975 2.0498Z"
-                    fill="currentColor" />
-            </svg>
-        </button>
     </div>
 
     <!-- ==================== View Mode ==================== -->
@@ -998,9 +1107,12 @@
             // Header
             const sidebarToggle = document.getElementById('sidebarToggle');
             const headerTitle = document.getElementById('headerTitle');
-            const repoSwitcher = document.getElementById('repoSwitcher');
-            const tabView = document.getElementById('tabView');
-            const tabCreate = document.getElementById('tabCreate');
+            const menuDropdown = document.getElementById('menuDropdown');
+            const menuBtn = document.getElementById('menuBtn');
+            const menuLabel = document.getElementById('menuLabel');
+            const menuView = document.getElementById('menuView');
+            const menuCreate = document.getElementById('menuCreate');
+            const menuSwitchRepo = document.getElementById('menuSwitchRepo');
 
             // View Mode
             const viewMode = document.getElementById('viewMode');
@@ -1093,21 +1205,44 @@
                 if (mode === 'view') {
                     viewMode.classList.remove('hidden');
                     createMode.classList.add('hidden');
-                    tabView.classList.add('active');
-                    tabCreate.classList.remove('active');
+                    menuView.classList.add('active');
+                    menuCreate.classList.remove('active');
+                    menuLabel.textContent = currentRepo || '查看 Issue';
                     sidebarToggle.style.display = '';
                 } else {
                     viewMode.classList.add('hidden');
                     createMode.classList.remove('hidden');
-                    tabView.classList.remove('active');
-                    tabCreate.classList.add('active');
+                    menuView.classList.remove('active');
+                    menuCreate.classList.add('active');
+                    menuLabel.textContent = '创建 Issue';
                     sidebarToggle.style.display = 'none';
                     switchEditorTab('write');
                 }
+                // Close menu after selection
+                menuDropdown.classList.remove('open');
             }
 
-            tabView.addEventListener('click', () => switchMode('view'));
-            tabCreate.addEventListener('click', () => switchMode('create'));
+            // Menu toggle
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('open');
+            });
+
+            // Close menu on outside click
+            document.addEventListener('click', () => {
+                menuDropdown.classList.remove('open');
+            });
+
+            menuDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            menuView.addEventListener('click', () => switchMode('view'));
+            menuCreate.addEventListener('click', () => switchMode('create'));
+            menuSwitchRepo.addEventListener('click', () => {
+                menuDropdown.classList.remove('open');
+                showRepoSwitchModal();
+            });
 
             // ==================== GitHub Token ====================
             function checkAuth() {
@@ -1118,6 +1253,7 @@
                     showTokenModal();
                 } else {
                     currentRepo = repo;
+                    menuLabel.textContent = repo;
                     loadIssues(token, repo);
                     publishBtn.disabled = false;
                 }
@@ -1267,8 +1403,6 @@
                 newRepoError.textContent = '';
             }
 
-            repoSwitcher.addEventListener('click', showRepoSwitchModal);
-
             saveSwitchBtn.addEventListener('click', () => {
                 const repo = newRepoSelect.value;
                 if (!repo) {
@@ -1292,6 +1426,7 @@
                 markdownContent.innerHTML = '';
                 issueList.innerHTML = '';
                 headerTitle.textContent = `加载 ${repo} 的 issues...`;
+                menuLabel.textContent = repo;
 
                 try {
                     issues = [];
