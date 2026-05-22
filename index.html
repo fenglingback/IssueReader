@@ -118,11 +118,43 @@
             text-align: center;
         }
 
+        /* Header action buttons (create mode) */
+        .header-actions {
+            display: none;
+            gap: 6px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-actions.visible {
+            display: flex;
+            margin-left: auto;
+        }
+
+        .header-actions .toolbar-btn {
+            padding: 4px 10px;
+            font-size: 13px;
+            gap: 3px;
+        }
+
+        .header-actions .toolbar-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .header-actions .dropdown-content {
+            z-index: 200;
+        }
+
         /* Menu dropdown */
         .menu-dropdown {
             position: relative;
             margin-left: auto;
             flex-shrink: 0;
+        }
+
+        .header-actions.visible + .menu-dropdown {
+            margin-left: 0;
         }
 
         .menu-btn {
@@ -422,7 +454,6 @@
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 8px;
         }
 
@@ -433,29 +464,25 @@
             flex-shrink: 0;
         }
 
-        .create-title-bar {
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .create-title-bar .title-input-inline {
-            width: 100%;
-            padding: 8px 12px;
+        .create-toolbar .title-input-inline {
+            flex: 1;
+            min-width: 0;
+            padding: 6px 10px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             background-color: var(--input-bg);
             color: var(--primary-text);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
         }
 
-        .create-title-bar .title-input-inline:focus {
+        .create-toolbar .title-input-inline:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
-        .create-title-bar .title-input-inline::placeholder {
+        .create-toolbar .title-input-inline::placeholder {
             font-weight: 400;
         }
 
@@ -885,6 +912,17 @@
             .create-toolbar {
                 flex-wrap: wrap;
             }
+
+            .create-toolbar .title-input-inline {
+                order: -1;
+                width: 100%;
+                flex: auto;
+            }
+
+            .header-actions .toolbar-btn {
+                padding: 4px 6px;
+                font-size: 12px;
+            }
         }
 
         .sidebar.collapsed {
@@ -912,6 +950,32 @@
             </svg>
         </button>
         <a class="header-title" id="headerTitle" target="_blank">GitHub Issue 管理器</a>
+        <div class="header-actions" id="headerActions">
+            <div class="dropdown" id="importDropdown">
+                <button class="toolbar-btn" id="importBtn">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Zm-0-0ZM7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"></path>
+                    </svg>
+                    导入
+                </button>
+                <div class="dropdown-content">
+                    <button id="importLocalBtn">从本地文件</button>
+                    <button id="importUrlBtn">从 URL</button>
+                </div>
+            </div>
+            <button class="toolbar-btn danger" id="clearBtn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M6.116 1.5H9.884a.25.25 0 0 1 .234.166l.544 1.459H5.338l.544-1.459A.25.25 0 0 1 6.116 1.5Zm-1.274.347L4.18 3.625H2.5A.75.75 0 0 0 2.5 5.125h11a.75.75 0 0 0 0-1.5h-1.68l-.662-1.778A1.75 1.75 0 0 0 9.884.5H6.116a1.75 1.75 0 0 0-1.643 1.147Zm9.335 3.778H3.823l.695 8.764a.75.75 0 0 0 .747.686h5.47a.75.75 0 0 0 .747-.686l.695-8.764Z"></path>
+                </svg>
+                清空
+            </button>
+            <button class="toolbar-btn" id="saveBtn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path>
+                </svg>
+                保存
+            </button>
+        </div>
         <div class="menu-dropdown" id="menuDropdown">
             <button class="menu-btn" id="menuBtn">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -971,32 +1035,7 @@
     <!-- ==================== Create Mode ==================== -->
     <div class="create-mode hidden" id="createMode">
         <div class="create-toolbar">
-            <div class="create-toolbar-group">
-                <div class="dropdown" id="importDropdown">
-                    <button class="toolbar-btn" id="importBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Zm-0-0ZM7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"></path>
-                        </svg>
-                        导入
-                    </button>
-                    <div class="dropdown-content">
-                        <button id="importLocalBtn">从本地文件</button>
-                        <button id="importUrlBtn">从 URL</button>
-                    </div>
-                </div>
-                <button class="toolbar-btn danger" id="clearBtn">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M6.116 1.5H9.884a.25.25 0 0 1 .234.166l.544 1.459H5.338l.544-1.459A.25.25 0 0 1 6.116 1.5Zm-1.274.347L4.18 3.625H2.5A.75.75 0 0 0 2.5 5.125h11a.75.75 0 0 0 0-1.5h-1.68l-.662-1.778A1.75 1.75 0 0 0 9.884.5H6.116a1.75 1.75 0 0 0-1.643 1.147Zm9.335 3.778H3.823l.695 8.764a.75.75 0 0 0 .747.686h5.47a.75.75 0 0 0 .747-.686l.695-8.764Z"></path>
-                    </svg>
-                    清空
-                </button>
-                <button class="toolbar-btn" id="saveBtn">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path>
-                    </svg>
-                    保存
-                </button>
-            </div>
+            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
             <div class="create-toolbar-group">
                 <button class="toolbar-btn primary" id="publishBtn" disabled>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -1005,9 +1044,6 @@
                     发布
                 </button>
             </div>
-        </div>
-        <div class="create-title-bar">
-            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
         </div>
         <div class="create-main">
             <div class="editor-tabs">
@@ -1117,6 +1153,7 @@
             const menuDropdown = document.getElementById('menuDropdown');
             const menuBtn = document.getElementById('menuBtn');
             const menuLabel = document.getElementById('menuLabel');
+            const headerActions = document.getElementById('headerActions');
             const menuView = document.getElementById('menuView');
             const menuCreate = document.getElementById('menuCreate');
             const menuSwitchRepo = document.getElementById('menuSwitchRepo');
@@ -1217,6 +1254,7 @@
                     menuLabel.textContent = currentRepo || '查看 Issue';
                     sidebarToggle.style.display = '';
                     headerTitle.style.display = '';
+                    headerActions.classList.remove('visible');
                 } else {
                     viewMode.classList.add('hidden');
                     createMode.classList.remove('hidden');
@@ -1225,6 +1263,7 @@
                     menuLabel.textContent = '创建 Issue';
                     sidebarToggle.style.display = 'none';
                     headerTitle.style.display = 'none';
+                    headerActions.classList.add('visible');
                     switchEditorTab('write');
                 }
                 // Close menu after selection
