@@ -75,7 +75,6 @@
         .header {
             display: flex;
             align-items: center;
-            gap: 10px;
             height: var(--header-height);
             border-bottom: 1px solid var(--border-color);
             padding: 0 10px;
@@ -98,6 +97,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 6px;
+            flex-shrink: 0;
         }
 
         .sidebar-toggle.active {
@@ -105,17 +105,24 @@
         }
 
         .header-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
             white-space: nowrap;
-            overflow: auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
             font-weight: 600;
             color: var(--primary-text);
             text-decoration: none;
-            flex: 1;
+            max-width: calc(100% - 160px);
+            text-align: center;
         }
 
         /* Menu dropdown */
         .menu-dropdown {
             position: relative;
+            margin-left: auto;
+            flex-shrink: 0;
         }
 
         .menu-btn {
@@ -414,16 +421,37 @@
             padding: 10px 16px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
         }
 
         .create-toolbar-group {
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-shrink: 0;
+        }
+
+        .create-toolbar .title-input-inline {
+            flex: 1;
+            min-width: 0;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--primary-text);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .create-toolbar .title-input-inline:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
+        }
+
+        .create-toolbar .title-input-inline::placeholder {
+            font-weight: 400;
         }
 
         .toolbar-btn {
@@ -501,27 +529,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        .create-title-row {
-            padding: 12px 16px 0;
-        }
-
-        .create-title-row input[type="text"] {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--primary-text);
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .create-title-row input[type="text"]:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
         .editor-tabs {
@@ -871,12 +878,13 @@
             }
 
             .create-toolbar {
-                flex-direction: column;
-                align-items: stretch;
+                flex-wrap: wrap;
             }
 
-            .create-toolbar-group {
-                justify-content: center;
+            .create-toolbar .title-input-inline {
+                order: -1;
+                width: 100%;
+                flex: auto;
             }
         }
 
@@ -990,19 +998,17 @@
                     保存
                 </button>
             </div>
+            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
             <div class="create-toolbar-group">
                 <button class="toolbar-btn primary" id="publishBtn" disabled>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm4 4A.75.75 0 0 1 5.75 6h4.5a.75.75 0 0 1 0 1.5h-4.5A.75.75 0 0 1 5 6.75Zm0 4a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75ZM1 14.75a.75.75 0 0 1 .75-.75h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1-.75-.75Z"></path>
                     </svg>
-                    发布到 GitHub
+                    发布
                 </button>
             </div>
         </div>
         <div class="create-main">
-            <div class="create-title-row">
-                <input type="text" id="titleInput" placeholder="Issue 标题">
-            </div>
             <div class="editor-tabs">
                 <button class="editor-tab active" id="tabWrite">编写</button>
                 <button class="editor-tab" id="tabPreview">预览</button>
