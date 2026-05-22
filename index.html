@@ -152,40 +152,25 @@
             flex-shrink: 0;
         }
 
-        .header-actions.visible + .menu-dropdown {
-            margin-left: auto;
-        }
-
-        .menu-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--button-bg);
+        .menu-toggle {
+            background: none;
+            border: none;
             color: var(--primary-text);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
             transition: background-color 0.15s;
         }
 
-        .menu-btn:hover {
+        .menu-toggle:hover {
             background-color: var(--hover-bg);
         }
 
-        .menu-dropdown.open .menu-btn {
+        .menu-dropdown.open .menu-toggle {
             background-color: var(--hover-bg);
-        }
-
-        .menu-btn .menu-chevron {
-            transition: transform 0.2s;
-        }
-
-        .menu-dropdown.open .menu-chevron {
-            transform: rotate(180deg);
         }
 
         .menu-panel {
@@ -196,7 +181,7 @@
             background-color: var(--primary-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            min-width: 200px;
+            min-width: 100px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
             z-index: 200;
             overflow: hidden;
@@ -206,33 +191,16 @@
             display: block;
         }
 
-        .menu-section-title {
-            padding: 8px 14px 4px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--secondary-text);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .menu-divider {
-            border: none;
-            border-top: 1px solid var(--border-color);
-            margin: 4px 0;
-        }
-
         .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: block;
             width: 100%;
-            padding: 8px 14px;
+            padding: 10px 20px;
             border: none;
             background: none;
             color: var(--primary-text);
             cursor: pointer;
             font-size: 14px;
-            text-align: left;
+            text-align: center;
             transition: background-color 0.1s;
         }
 
@@ -242,28 +210,11 @@
 
         .menu-item.active {
             color: var(--accent-color);
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        .menu-item .item-check {
-            width: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .menu-item .item-icon {
-            width: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            color: var(--secondary-text);
-        }
-
-        .menu-item.active .item-icon {
-            color: var(--accent-color);
+        .menu-item + .menu-item {
+            border-top: 1px solid var(--border-color);
         }
 
         /* ==================== View Mode (index1) ==================== */
@@ -972,40 +923,15 @@
             </button>
         </div>
         <div class="menu-dropdown" id="menuDropdown">
-            <button class="menu-btn" id="menuBtn">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm6.25 3.5v-1h1v1h-1Zm.75-8a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8.5 3.5Z"></path>
-                </svg>
-                <span id="menuLabel">查看 Issue</span>
-                <svg class="menu-chevron" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                    <path d="M2.22 4.47a.75.75 0 0 1 1.06 0L6 7.19l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L2.22 5.53a.75.75 0 0 1 0-1.06Z"></path>
+            <button class="menu-toggle" id="menuBtn" title="切换模式">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M5.22 1.72a.75.75 0 0 1 0 1.06L2.56 5.44l2.66 2.66a.75.75 0 0 1-1.06 1.06L.97 5.97a.75.75 0 0 1 0-1.06l3.19-3.19a.75.75 0 0 1 1.06 0Zm5.56 0a.75.75 0 0 1 1.06 0l3.19 3.19a.75.75 0 0 1 0 1.06l-3.19 3.19a.75.75 0 1 1-1.06-1.06l2.66-2.66-2.66-2.66a.75.75 0 0 1 0-1.06Z"></path>
                 </svg>
             </button>
             <div class="menu-panel">
-                <div class="menu-section-title">功能</div>
-                <button class="menu-item active" id="menuView">
-                    <span class="item-check">✓</span>
-                    <span class="item-icon">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>
-                    </span>
-                    查看 Issue
-                </button>
-                <button class="menu-item" id="menuCreate">
-                    <span class="item-check"></span>
-                    <span class="item-icon">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>
-                    </span>
-                    创建 Issue
-                </button>
-                <hr class="menu-divider">
-                <div class="menu-section-title">仓库</div>
-                <button class="menu-item" id="menuSwitchRepo">
-                    <span class="item-check"></span>
-                    <span class="item-icon">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.22 9.95a3.5 3.5 0 0 1-4.45 4.45L7.02 16.15a5.5 5.5 0 0 0 7.13-7.13l-1.93 1.93ZM2.78 6.05a3.5 3.5 0 0 1 4.45-4.45L8.98-.15a5.5 5.5 0 0 0-7.13 7.13l1.93-1.93ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"></path></svg>
-                    </span>
-                    切换仓库
-                </button>
+                <button class="menu-item active" id="menuView">查看</button>
+                <button class="menu-item" id="menuCreate">新建</button>
+                <button class="menu-item" id="menuSwitchRepo">换仓</button>
             </div>
         </div>
     </div>
@@ -1032,11 +958,10 @@
         <div class="create-toolbar">
             <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
             <div class="create-toolbar-group">
-                <button class="toolbar-btn primary" id="publishBtn" disabled>
+                <button class="toolbar-btn primary" id="publishBtn" disabled title="发布">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm4 4A.75.75 0 0 1 5.75 6h4.5a.75.75 0 0 1 0 1.5h-4.5A.75.75 0 0 1 5 6.75Zm0 4a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75ZM1 14.75a.75.75 0 0 1 .75-.75h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1-.75-.75Z"></path>
+                        <path d="M0 1.75A.75.75 0 0 1 .79 1l7.5 2.5a.75.75 0 0 1 0 1.42L5 6.32v4.93a.75.75 0 0 1-1.28.53L2.22 10.28l-1.69 3.55a.75.75 0 1 1-1.36-.63l1.82-3.83a.75.75 0 0 1 .55-.41.74.74 0 0 1 .65.2L3.5 10.5V6.32L.79 5.17A.75.75 0 0 1 0 1.75Zm6.28.47L14.5.56l-3.44 7.69L6.28 5.5V2.22Z"></path>
                     </svg>
-                    发布
                 </button>
             </div>
         </div>
@@ -1147,7 +1072,6 @@
             const headerTitle = document.getElementById('headerTitle');
             const menuDropdown = document.getElementById('menuDropdown');
             const menuBtn = document.getElementById('menuBtn');
-            const menuLabel = document.getElementById('menuLabel');
             const headerActions = document.getElementById('headerActions');
             const menuView = document.getElementById('menuView');
             const menuCreate = document.getElementById('menuCreate');
@@ -1246,7 +1170,6 @@
                     createMode.classList.add('hidden');
                     menuView.classList.add('active');
                     menuCreate.classList.remove('active');
-                    menuLabel.textContent = currentRepo || '查看 Issue';
                     sidebarToggle.style.display = '';
                     headerTitle.style.display = '';
                     headerActions.classList.remove('visible');
@@ -1255,7 +1178,6 @@
                     createMode.classList.remove('hidden');
                     menuView.classList.remove('active');
                     menuCreate.classList.add('active');
-                    menuLabel.textContent = '创建 Issue';
                     sidebarToggle.style.display = 'none';
                     headerTitle.style.display = 'none';
                     headerActions.classList.add('visible');
@@ -1296,7 +1218,7 @@
                     showTokenModal();
                 } else {
                     currentRepo = repo;
-                    menuLabel.textContent = repo;
+                    headerTitle.textContent = repo;
                     loadIssues(token, repo);
                     publishBtn.disabled = false;
                 }
@@ -1469,7 +1391,6 @@
                 markdownContent.innerHTML = '';
                 issueList.innerHTML = '';
                 headerTitle.textContent = `加载 ${repo} 的 issues...`;
-                menuLabel.textContent = repo;
 
                 try {
                     issues = [];
