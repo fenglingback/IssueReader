@@ -405,6 +405,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: nowrap;
         }
 
         .create-toolbar-group {
@@ -856,7 +857,7 @@
             }
 
             .header-title {
-                display: none;
+                max-width: calc(100% - 120px);
             }
 
             .create-toolbar {
@@ -865,8 +866,12 @@
 
             .create-toolbar .title-input-inline {
                 order: -1;
-                width: 100%;
-                flex: auto;
+                width: calc(100% - 50px);
+                flex: none;
+            }
+
+            .create-toolbar-group {
+                flex-shrink: 0;
             }
 
             .header-actions .toolbar-btn {
@@ -1172,6 +1177,7 @@
                     menuCreate.classList.remove('active');
                     sidebarToggle.style.display = '';
                     headerTitle.style.display = '';
+                    headerTitle.textContent = currentRepo || 'GitHub Issue 管理器';
                     headerActions.classList.remove('visible');
                 } else {
                     viewMode.classList.add('hidden');
