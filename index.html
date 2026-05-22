@@ -418,10 +418,11 @@
         }
 
         .create-toolbar {
-            padding: 10px 16px;
+            padding: 8px 16px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
         }
 
@@ -432,25 +433,29 @@
             flex-shrink: 0;
         }
 
-        .create-toolbar .title-input-inline {
-            flex: 1;
-            min-width: 0;
-            padding: 6px 10px;
+        .create-title-bar {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .create-title-bar .title-input-inline {
+            width: 100%;
+            padding: 8px 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             background-color: var(--input-bg);
             color: var(--primary-text);
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
         }
 
-        .create-toolbar .title-input-inline:focus {
+        .create-title-bar .title-input-inline:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
-        .create-toolbar .title-input-inline::placeholder {
+        .create-title-bar .title-input-inline::placeholder {
             font-weight: 400;
         }
 
@@ -880,12 +885,6 @@
             .create-toolbar {
                 flex-wrap: wrap;
             }
-
-            .create-toolbar .title-input-inline {
-                order: -1;
-                width: 100%;
-                flex: auto;
-            }
         }
 
         .sidebar.collapsed {
@@ -998,7 +997,6 @@
                     保存
                 </button>
             </div>
-            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
             <div class="create-toolbar-group">
                 <button class="toolbar-btn primary" id="publishBtn" disabled>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -1007,6 +1005,9 @@
                     发布
                 </button>
             </div>
+        </div>
+        <div class="create-title-bar">
+            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
         </div>
         <div class="create-main">
             <div class="editor-tabs">
@@ -1215,6 +1216,7 @@
                     menuCreate.classList.remove('active');
                     menuLabel.textContent = currentRepo || '查看 Issue';
                     sidebarToggle.style.display = '';
+                    headerTitle.style.display = '';
                 } else {
                     viewMode.classList.add('hidden');
                     createMode.classList.remove('hidden');
@@ -1222,6 +1224,7 @@
                     menuCreate.classList.add('active');
                     menuLabel.textContent = '创建 Issue';
                     sidebarToggle.style.display = 'none';
+                    headerTitle.style.display = 'none';
                     switchEditorTab('write');
                 }
                 // Close menu after selection
