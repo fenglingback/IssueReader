@@ -24,10 +24,10 @@
         :root {
             --header-height: 56px;
             --sidebar-width: 320px;
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
             --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
             --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
@@ -162,7 +162,7 @@
             color: var(--secondary-text);
             cursor: pointer;
             font-size: 16px;
-            padding: 8px;
+            padding: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -200,16 +200,16 @@
         /* Mode Tabs */
         .mode-tabs {
             display: flex;
-            gap: 2px;
+            gap: 0;
             background-color: var(--button-bg);
             border-radius: var(--radius-sm);
-            padding: 3px;
+            padding: 2px;
             border: 1px solid var(--border-subtle);
         }
 
         .mode-tab {
-            padding: 6px 16px;
-            border-radius: 6px;
+            padding: 5px 14px;
+            border-radius: var(--radius-sm);
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
@@ -269,7 +269,7 @@
         }
 
         .sidebar-search {
-            padding: 16px;
+            padding: 12px;
             position: sticky;
             top: 0;
             background-color: var(--sidebar-bg);
@@ -279,9 +279,9 @@
 
         .sidebar-search input {
             width: 100%;
-            padding: 10px 14px 10px 36px;
+            padding: 8px 12px 8px 34px;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-sm);
             background-color: var(--input-bg);
             color: var(--primary-text);
             font-size: 13px;
@@ -295,7 +295,6 @@
         .sidebar-search input:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .sidebar-search input::placeholder {
@@ -307,49 +306,50 @@
             overflow-y: auto;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
-            padding: 8px;
+            padding: 4px 0;
             margin: 0;
             list-style: none;
         }
 
         .sidebar-item {
-            padding: 12px 14px;
+            padding: 10px 12px;
             border: 1px solid transparent;
-            border-radius: var(--radius-md);
+            border-left: 3px solid transparent;
+            border-radius: 0;
             cursor: pointer;
             transition: all var(--transition-fast);
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-bottom: 4px;
+            gap: 6px;
+            margin-bottom: 0;
         }
 
         .sidebar-item:hover {
             background-color: var(--hover-bg);
-            border-color: var(--border-subtle);
         }
 
         .sidebar-item.active {
-            border-color: var(--accent-color);
+            border-left-color: var(--accent-color);
             background: var(--accent-bg);
-            box-shadow: 0 0 0 1px var(--accent-glow);
+            box-shadow: none;
         }
 
         .sidebar-item.active .sidebar-item-title {
             white-space: normal;
             color: var(--accent-color);
+            font-weight: 600;
         }
 
         .sidebar-item-title {
-            font-weight: 600;
-            font-size: 13.5px;
+            font-weight: 500;
+            font-size: 13px;
             color: var(--primary-text);
-            line-height: 1.45;
-            margin-bottom: 2px;
+            line-height: 1.4;
+            margin-bottom: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .sidebar-item-meta {
@@ -362,7 +362,7 @@
 
         .sidebar-item-meta span:first-of-type {
             color: var(--label-color);
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .sidebar-item-meta span:last-of-type {
@@ -401,7 +401,7 @@
         }
 
         .toolbar-btn {
-            padding: 7px 14px;
+            padding: 5px 12px;
             background-color: var(--button-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
@@ -423,12 +423,10 @@
         .toolbar-btn:hover:not(:disabled) {
             background-color: var(--button-hover);
             border-color: var(--secondary-text);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
         }
 
         .toolbar-btn:active:not(:disabled) {
-            transform: translateY(0);
+            background-color: var(--border-color);
         }
 
         .toolbar-btn.publish-btn {
@@ -439,8 +437,7 @@
         }
 
         .toolbar-btn.publish-btn:hover:not(:disabled) {
-            box-shadow: 0 4px 16px var(--accent-glow);
-            transform: translateY(-1px);
+            opacity: 0.92;
         }
 
         /* Dropdown */
@@ -454,7 +451,7 @@
             position: absolute;
             background-color: var(--surface-bg);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-sm);
             min-width: 180px;
             z-index: 50;
             top: calc(100% + 4px);
@@ -514,7 +511,7 @@
 
         .editor-pane input[type="text"] {
             width: 100%;
-            padding: 14px 18px;
+            padding: 12px 16px;
             border: none;
             border-bottom: 1px solid var(--border-subtle);
             background-color: var(--input-bg);
@@ -538,7 +535,7 @@
         .editor-pane textarea {
             flex: 1;
             width: 100%;
-            padding: 18px;
+            padding: 14px 16px;
             border: none;
             resize: none;
             font-family: 'SF Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -569,7 +566,7 @@
         }
 
         .preview-pane .markdown-body {
-            padding: 18px 28px;
+            padding: 14px 20px;
             max-width: none;
         }
 
@@ -579,12 +576,12 @@
             max-width: 880px;
             margin: 0 auto;
             box-sizing: border-box;
-            padding: 32px 44px;
+            padding: 24px 32px;
         }
 
         @media (max-width: 767px) {
             .markdown-body {
-                padding: 20px 16px;
+                padding: 16px 12px;
             }
         }
 
@@ -596,7 +593,7 @@
         .markdown-body pre {
             background-color: #1e1e2e;
             border: 1px solid #313244;
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-sm);
             display: grid;
             grid-template-columns: 1fr auto;
             overflow: hidden;
@@ -639,7 +636,7 @@
 
         .markdown-body img {
             cursor: zoom-in;
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-sm);
             box-shadow: var(--shadow-sm);
         }
 
@@ -667,15 +664,15 @@
         .markdown-body blockquote {
             background-color: var(--accent-bg);
             border-left: 3px solid var(--accent-color);
-            padding: 16px 20px;
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            padding: 12px 16px;
+            border-radius: 0;
             color: var(--secondary-text);
         }
 
         .markdown-body table {
             border-collapse: collapse;
             width: 100%;
-            border-radius: var(--radius-md);
+            border-radius: 0;
             overflow: hidden;
         }
 
@@ -717,11 +714,11 @@
 
         .modal {
             background-color: var(--surface-bg);
-            border-radius: var(--radius-xl);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-xl);
             width: 90%;
             max-width: 480px;
-            padding: 28px;
+            padding: 24px;
             animation: modal-in var(--transition-base) cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
@@ -755,7 +752,7 @@
         .modal-body input,
         .modal-body select {
             width: 100%;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
             background-color: var(--input-bg);
@@ -770,7 +767,6 @@
         .modal-body select:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .modal-body input::placeholder {
@@ -784,7 +780,7 @@
         }
 
         .modal-button {
-            padding: 9px 18px;
+            padding: 7px 16px;
             border-radius: var(--radius-sm);
             font-weight: 500;
             cursor: pointer;
@@ -807,18 +803,17 @@
         }
 
         .modal-button.primary:hover {
-            box-shadow: 0 4px 16px var(--accent-glow);
-            transform: translateY(-1px);
+            opacity: 0.92;
         }
 
         .error-message {
             color: var(--danger-color);
             font-size: 13px;
-            margin-top: -10px;
-            margin-bottom: 12px;
-            padding: 8px 12px;
+            margin-top: -8px;
+            margin-bottom: 10px;
+            padding: 6px 10px;
             background-color: var(--danger-light);
-            border-radius: var(--radius-sm);
+            border-radius: 0;
             border-left: 3px solid var(--danger-color);
         }
 
@@ -827,8 +822,8 @@
             max-height: 300px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            margin-top: 8px;
+            border-radius: var(--radius-sm);
+            margin-top: 6px;
             overscroll-behavior: contain;
         }
 
@@ -947,20 +942,20 @@
             }
 
             .modal {
-                padding: 20px;
-                border-radius: var(--radius-lg);
+                padding: 16px;
+                border-radius: var(--radius-md);
             }
         }
 
         /* ========== Toast Notification ========== */
         .toast {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
+            bottom: 24px;
+            right: 24px;
             background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
             color: #fff;
-            padding: 14px 22px;
-            border-radius: var(--radius-md);
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
             font-size: 14px;
             font-weight: 500;
             z-index: 2000;
@@ -1142,7 +1137,7 @@
             <h3 class="modal-title">发布到仓库</h3>
             <div class="modal-body">
                 <p style="margin-bottom: 12px;">选择一个仓库来发布 Issue：</p>
-                <input type="text" id="repoSearchInput" placeholder="搜索仓库..." style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;background-color:var(--primary-bg);color:var(--primary-text);font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+                <input type="text" id="repoSearchInput" placeholder="搜索仓库..." style="width:100%;padding:7px 10px;border:1px solid var(--border-color);border-radius:4px;background-color:var(--primary-bg);color:var(--primary-text);font-size:13px;margin-bottom:8px;box-sizing:border-box;">
                 <div class="repo-list" id="publishRepoList">
                     <div class="repo-item">加载中...</div>
                 </div>
