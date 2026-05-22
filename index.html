@@ -410,26 +410,17 @@
         }
 
         .create-main {
-            display: flex;
             flex: 1;
-            overflow: hidden;
-        }
-
-        .editor-container,
-        .preview-container {
-            flex: 1;
-            padding: 16px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        .editor-container {
-            border-right: 1px solid var(--border-color);
-            gap: 12px;
+        .create-title-row {
+            padding: 12px 16px 0;
         }
 
-        .editor-container input[type="text"] {
+        .create-title-row input[type="text"] {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--border-color);
@@ -440,62 +431,129 @@
             font-weight: 600;
         }
 
-        .editor-container input[type="text"]:focus,
-        .editor-container textarea:focus {
+        .create-title-row input[type="text"]:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
-        .editor-container textarea {
+        .editor-tabs {
+            display: flex;
+            padding: 12px 16px 0;
+            gap: 0;
+        }
+
+        .editor-tab {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background-color: var(--button-bg);
+            color: var(--secondary-text);
+            transition: all 0.15s;
+            position: relative;
+            bottom: -1px;
+        }
+
+        .editor-tab.active {
+            background-color: var(--primary-bg);
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--primary-bg);
+            z-index: 1;
+        }
+
+        .editor-tab:not(.active):hover {
+            color: var(--primary-text);
+            background-color: var(--hover-bg);
+        }
+
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0 16px 16px;
+        }
+
+        .editor-pane-inner {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 0 6px 6px 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-write,
+        .editor-preview-pane {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-write.active,
+        .editor-preview-pane.active {
+            display: flex;
+        }
+
+        .editor-write textarea {
             width: 100%;
             flex: 1;
             resize: none;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 14px;
             line-height: 1.6;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
+            padding: 16px;
+            border: none;
+            border-radius: 0 0 6px 6px;
             background-color: var(--input-bg);
             color: var(--primary-text);
             overflow-y: auto;
         }
 
-        .preview-pane {
+        .editor-write textarea:focus {
+            outline: none;
+        }
+
+        .editor-preview-pane .preview-content {
             flex: 1;
             overflow-y: auto;
             padding: 16px;
             background-color: var(--preview-bg);
-            border-radius: 6px;
         }
 
-        .preview-pane .markdown-body {
+        .editor-preview-pane .preview-content .markdown-body {
             background-color: transparent;
             color: var(--primary-text);
+            max-width: none;
+            padding: 0;
         }
 
-        .preview-pane .markdown-body pre {
+        .editor-preview-pane .preview-content .markdown-body pre {
             background-color: #1e1e1e;
         }
 
-        .preview-pane .markdown-body strong {
+        .editor-preview-pane .preview-content .markdown-body strong {
             color: var(--primary-text);
             text-shadow: none;
             font-weight: 700;
         }
 
-        .preview-pane .markdown-body em {
+        .editor-preview-pane .preview-content .markdown-body em {
             color: var(--primary-text);
             font-style: italic;
         }
 
-        .preview-pane .markdown-body blockquote {
+        .editor-preview-pane .preview-content .markdown-body blockquote {
             background-color: var(--hover-bg);
             border-left: .25em solid var(--accent-color);
         }
 
-        .preview-pane .markdown-body code {
+        .editor-preview-pane .preview-content .markdown-body code {
             background-color: rgba(175, 184, 193, 0.2);
         }
 
@@ -721,16 +779,6 @@
                 padding: 0 10px;
             }
 
-            .create-main {
-                flex-direction: column;
-            }
-
-            .editor-container {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                max-height: 50%;
-            }
-
             .header-tabs {
                 margin: 0 auto;
             }
@@ -843,12 +891,22 @@
             </div>
         </div>
         <div class="create-main">
-            <div class="editor-container">
+            <div class="create-title-row">
                 <input type="text" id="titleInput" placeholder="Issue 标题">
-                <textarea id="contentInput" placeholder="用 Markdown 编写 Issue 内容..."></textarea>
             </div>
-            <div class="preview-container">
-                <div class="preview-pane markdown-body" id="editorPreview"></div>
+            <div class="editor-tabs">
+                <button class="editor-tab active" id="tabWrite">编写</button>
+                <button class="editor-tab" id="tabPreview">预览</button>
+            </div>
+            <div class="editor-pane">
+                <div class="editor-pane-inner">
+                    <div class="editor-write active" id="editorWrite">
+                        <textarea id="contentInput" placeholder="用 Markdown 编写 Issue 内容..."></textarea>
+                    </div>
+                    <div class="editor-preview-pane" id="editorPreviewPane">
+                        <div class="preview-content markdown-body" id="editorPreview"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -958,6 +1016,10 @@
             const titleInput = document.getElementById('titleInput');
             const contentInput = document.getElementById('contentInput');
             const editorPreview = document.getElementById('editorPreview');
+            const tabWrite = document.getElementById('tabWrite');
+            const tabPreview = document.getElementById('tabPreview');
+            const editorWrite = document.getElementById('editorWrite');
+            const editorPreviewPane = document.getElementById('editorPreviewPane');
             const importDropdown = document.getElementById('importDropdown');
             const importLocalBtn = document.getElementById('importLocalBtn');
             const importUrlBtn = document.getElementById('importUrlBtn');
@@ -1040,6 +1102,7 @@
                     tabView.classList.remove('active');
                     tabCreate.classList.add('active');
                     sidebarToggle.style.display = 'none';
+                    switchEditorTab('write');
                 }
             }
 
@@ -1474,19 +1537,42 @@
             });
 
             // ==================== Create Mode ====================
+            let editorTab = 'write'; // 'write' or 'preview'
+
+            function switchEditorTab(tab) {
+                editorTab = tab;
+                if (tab === 'write') {
+                    tabWrite.classList.add('active');
+                    tabPreview.classList.remove('active');
+                    editorWrite.classList.add('active');
+                    editorPreviewPane.classList.remove('active');
+                } else {
+                    tabPreview.classList.add('active');
+                    tabWrite.classList.remove('active');
+                    editorPreviewPane.classList.add('active');
+                    editorWrite.classList.remove('active');
+                    updateEditorPreview();
+                }
+            }
+
+            tabWrite.addEventListener('click', () => switchEditorTab('write'));
+            tabPreview.addEventListener('click', () => switchEditorTab('preview'));
+
             function updateEditorPreview() {
                 editorPreview.innerHTML = marked.parse(contentInput.value || '*没有内容可预览*');
             }
 
-            contentInput.addEventListener('input', updateEditorPreview);
+            contentInput.addEventListener('input', () => {
+                // Live update preview if it's visible
+                if (editorTab === 'preview') {
+                    updateEditorPreview();
+                }
+                publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim() && localStorage.getItem('githubToken'));
+            });
             titleInput.addEventListener('input', () => {
                 // Enable/disable publish based on content
                 publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim() && localStorage.getItem('githubToken'));
             });
-            contentInput.addEventListener('input', () => {
-                publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim() && localStorage.getItem('githubToken'));
-            });
-
             // Import dropdown toggle
             document.getElementById('importBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1515,7 +1601,7 @@
                     reader.onload = event => {
                         titleInput.value = file.name.replace('.md', '');
                         contentInput.value = event.target.result;
-                        updateEditorPreview();
+                        switchEditorTab('write');
                         saveEditorToLocalStorage();
                     };
                     reader.readAsText(file);
@@ -1545,7 +1631,7 @@
 
                     const mdContent = await response.text();
                     contentInput.value = mdContent;
-                    updateEditorPreview();
+                    switchEditorTab('write');
                     saveEditorToLocalStorage();
                     urlModal.classList.add('hidden');
                     urlInput.value = '';
