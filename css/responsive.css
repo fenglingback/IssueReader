@@ -1,0 +1,75 @@
+/* ==================== Hover States ==================== */
+@media (hover: hover) {
+    .sidebar-toggle:hover {
+        background-color: var(--hover-bg);
+    }
+
+    .sidebar-item:hover {
+        background-color: var(--hover-bg);
+    }
+
+    .header-btn:hover {
+        background-color: var(--hover-bg);
+    }
+
+    .modal-button.primary:hover {
+        background-color: var(--accent-hover);
+    }
+
+    .toolbar-btn:hover:not(:disabled) {
+        background-color: var(--hover-bg);
+    }
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .sidebar.visible {
+        transform: translateX(0);
+    }
+
+    .content {
+        padding: 0 10px;
+    }
+
+    .header-title {
+        max-width: calc(100% - 100px);
+    }
+
+    .create-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .create-toolbar .title-input-inline {
+        order: -1;
+        width: calc(100% - 50px);
+        flex: none;
+    }
+
+    .create-toolbar-group {
+        flex-shrink: 0;
+    }
+
+    .header-actions .toolbar-btn {
+        padding: 4px 6px;
+    }
+
+    .content-edit-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .content-edit-toolbar .edit-title-input {
+        order: -1;
+        width: calc(100% - 50px);
+        flex: none;
+    }
+}

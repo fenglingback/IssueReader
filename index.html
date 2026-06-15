@@ -1,1952 +1,409 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Issue 管理器</title>
-    <link type="image/png" rel="icon" href="https://img.icons8.com/material-outlined/24/read.png">
-    <!-- 关键CSS同步加载 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
-    <!-- 非关键CSS异步加载 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css" media="print"
-        onload="this.media='all'">
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css" media="print"
-        onload="this.media='all'">
-    <!-- JS 资源 defer 加载 -->
-    <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        :root {
-            --header-height: 50px;
-            --sidebar-width: 300px;
-            --primary-text: #24292f;
-            --primary-bg: #ffffff;
-            --border-color: #d0d7de;
-            --secondary-text: #57606a;
-            --sidebar-bg: #f6f8fa;
-            --hover-bg: #0000001a;
-            --accent-color: #0969da;
-            --accent-hover: #0a5dc2;
-            --accent-bg: rgba(9, 105, 218, 0.1);
-            --danger-color: #cf222e;
-            --success-color: #1a7f37;
-            --button-bg: #f6f8fa;
-            --preview-bg: #f6f8fa;
-            --input-bg: #ffffff;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --primary-text: #e6edf3;
-                --primary-bg: #0d1117;
-                --border-color: #30363d;
-                --secondary-text: #7d8590;
-                --sidebar-bg: #161b22;
-                --hover-bg: #ffffff1a;
-                --accent-color: #2f81f7;
-                --accent-hover: #1a6fef;
-                --accent-bg: rgba(47, 129, 247, 0.1);
-                --danger-color: #ff7b72;
-                --success-color: #3fb950;
-                --button-bg: #21262d;
-                --preview-bg: #161b22;
-                --input-bg: #0d1117;
-            }
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            color: var(--primary-text);
-            background-color: var(--primary-bg);
-            transition: color 0.3s, background-color 0.3s;
-        }
-
-        /* ==================== Header ==================== */
-        .header {
-            display: flex;
-            align-items: center;
-            height: var(--header-height);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 10px;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            left: 0;
-            background-color: var(--primary-bg);
-            z-index: 100;
-        }
-
-        .header-btn {
-            background: none;
-            border: none;
-            color: var(--primary-text);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            flex-shrink: 0;
-        }
-
-        .sidebar-toggle.active {
-            background-color: var(--hover-bg);
-        }
-
-        .header-title {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden;
-            font-weight: 600;
-            color: var(--primary-text);
-            text-decoration: none;
-            max-width: calc(100% - 160px);
-            text-align: center;
-            scrollbar-width: none;
-        }
-
-        .header-title::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* Header action buttons (create mode) */
-        .header-actions {
-            display: none;
-            gap: 6px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .header-actions.visible {
-            display: flex;
-        }
-
-        .header-actions .toolbar-btn {
-            padding: 6px 8px;
-            font-size: 13px;
-            gap: 3px;
-        }
-
-        .header-actions .toolbar-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .header-actions .dropdown-content {
-            z-index: 200;
-        }
-
-        /* Menu dropdown */
-        .menu-dropdown {
-            position: relative;
-            margin-left: auto;
-            flex-shrink: 0;
-        }
-
-        .menu-toggle {
-            background: none;
-            border: none;
-            color: var(--primary-text);
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            transition: background-color 0.15s;
-        }
-
-        .menu-toggle:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .menu-dropdown.open .menu-toggle {
-            background-color: var(--hover-bg);
-        }
-
-        .menu-panel {
-            display: none;
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            background-color: var(--primary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            min-width: 100px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            z-index: 200;
-            overflow: hidden;
-        }
-
-        .menu-dropdown.open .menu-panel {
-            display: block;
-        }
-
-        .menu-item {
-            display: block;
-            width: 100%;
-            padding: 10px 20px;
-            border: none;
-            background: none;
-            color: var(--primary-text);
-            cursor: pointer;
-            font-size: 14px;
-            text-align: center;
-            transition: background-color 0.1s;
-        }
-
-        .menu-item:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .menu-item.active {
-            color: var(--accent-color);
-            font-weight: 600;
-        }
-
-        .menu-item+.menu-item {
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* ==================== View Mode (index1) ==================== */
-        .view-mode {
-            display: flex;
-            height: calc(100vh - var(--header-height));
-            margin-top: var(--header-height);
-        }
-
-        .view-mode.hidden {
-            display: none;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            border-right: 1px solid var(--border-color);
-            background-color: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s;
-            overflow: hidden;
-            position: relative;
-            z-index: 10;
-        }
-
-        .sidebar-search {
-            padding: 15px;
-            position: sticky;
-            top: 0;
-            background-color: var(--sidebar-bg);
-            z-index: 1;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sidebar-search input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--primary-text);
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .sidebar-search input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
-        }
-
-        .sidebar-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-
-        .sidebar-item {
-            padding: 8px 15px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background-color 0.1s;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .sidebar-item.active {
-            border-left: 3px solid var(--accent-color);
-            background-color: var(--accent-bg);
-        }
-
-        .sidebar-item.active .sidebar-item-title {
-            white-space: normal;
-        }
-
-        .sidebar-item-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .sidebar-item-meta {
-            font-size: 12px;
-            color: var(--secondary-text);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .sidebar-item-meta span:first-of-type {
-            color: #26a2a6;
-        }
-
-        .sidebar-item-meta span:last-of-type {
-            align-self: flex-end;
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .markdown-body {
-            color: #f0f6fcbf;
-            margin: 0 auto;
-            box-sizing: border-box;
-            padding: 25px 40px;
-        }
-
-        @media (max-width: 767px) {
-            .markdown-body {
-                padding: 15px;
-            }
-        }
-
-        .markdown-body pre {
-            background-color: black;
-            border: 1px solid #3373bc;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            overflow: hidden;
-            padding: 0;
-        }
-
-        .copybtn {
-            height: fit-content;
-            margin: .5rem .5rem 0 0;
-            cursor: pointer;
-        }
-
-        .markdown-body pre>code {
-            overflow: auto;
-            padding: 1rem;
-        }
-
-        .markdown-body code {
-            background-color: #6e768166;
-        }
-
-        .markdown-body img {
-            cursor: zoom-in;
-        }
-
-        .markdown-body a,
-        .markdown-body a:hover {
-            text-decoration: underline;
-            text-decoration-thickness: 1px;
-            text-underline-position: under;
-        }
-
-        .markdown-body strong {
-            color: #b8b846b9;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
-        }
-
-        .markdown-body em {
-            color: #9191ff;
-            letter-spacing: 0.5px;
-        }
-
-        .markdown-body blockquote {
-            background-color: #2f3e4fac;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: .25em solid #ff00d4c5;
-        }
-
-        /* ==================== Create Mode (index2) ==================== */
-        .create-mode {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - var(--header-height));
-            margin-top: var(--header-height);
-        }
-
-        .create-mode.hidden {
-            display: none;
-        }
-
-        .create-toolbar {
-            padding: 8px 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: nowrap;
-        }
-
-        .create-toolbar-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .create-toolbar .title-input-inline {
-            flex: 1;
-            min-width: 0;
-            padding: 6px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--primary-text);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .create-toolbar .title-input-inline:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
-        }
-
-        .create-toolbar .title-input-inline::placeholder {
-            font-weight: 400;
-        }
-
-        .toolbar-btn {
-            padding: 6px 12px;
-            background-color: var(--button-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--primary-text);
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .toolbar-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .toolbar-btn.primary {
-            background-color: var(--success-color);
-            color: white;
-            border-color: var(--success-color);
-        }
-
-        .toolbar-btn.primary:hover:not(:disabled) {
-            filter: brightness(1.1);
-        }
-
-        .toolbar-btn.danger {
-            color: var(--danger-color);
-        }
-
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: var(--primary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            min-width: 160px;
-            z-index: 10;
-            top: 100%;
-            left: 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .dropdown-content button {
-            width: 100%;
-            text-align: left;
-            border: none;
-            border-radius: 0;
-            padding: 8px 16px;
-            background: none;
-            color: var(--primary-text);
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .dropdown-content button:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .dropdown.open .dropdown-content {
-            display: block;
-        }
-
-        .create-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .editor-pane {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: 16px;
-        }
-
-        .editor-pane-inner {
-            flex: 1;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .preview-toggle {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 5;
-            background-color: var(--primary-bg);
-            border: 1px solid var(--border-color);
-            color: var(--secondary-text);
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.15s, background-color 0.15s;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .preview-toggle:hover {
-            color: var(--primary-text);
-            background-color: var(--hover-bg);
-        }
-
-        .preview-toggle.active {
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        .editor-write,
-        .editor-preview-pane {
-            flex: 1;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .editor-write.active,
-        .editor-preview-pane.active {
-            display: flex;
-        }
-
-        .editor-write textarea {
-            width: 100%;
-            flex: 1;
-            resize: none;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            padding: 16px;
-            border: none;
-            border-radius: 0 0 6px 6px;
-            background-color: var(--input-bg);
-            color: var(--primary-text);
-            overflow-y: auto;
-        }
-
-        .editor-write textarea:focus {
-            outline: none;
-        }
-
-        .editor-preview-pane .preview-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 16px;
-            background-color: var(--preview-bg);
-            width: 100%;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body {
-            background-color: transparent;
-            color: var(--primary-text);
-            max-width: none;
-            padding: 0;
-            width: 100%;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body pre {
-            background-color: #1e1e1e;
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body table {
-            display: block;
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body strong {
-            color: var(--primary-text);
-            text-shadow: none;
-            font-weight: 700;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body em {
-            color: var(--primary-text);
-            font-style: italic;
-        }
-
-        .editor-preview-pane .preview-content .markdown-body blockquote {
-            background-color: var(--hover-bg);
-            border-left: .25em solid var(--accent-color);
-        }
-
-        .editor-preview-pane .preview-content .markdown-body code {
-            background-color: rgba(175, 184, 193, 0.2);
-        }
-
-        /* ==================== Common UI Components ==================== */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.hidden {
-            display: none;
-        }
-
-        .modal {
-            background-color: var(--primary-bg);
-            border-radius: 6px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            width: 90%;
-            max-width: 500px;
-            padding: 20px;
-        }
-
-        .modal-title {
-            margin: 0 0 20px;
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .modal-body {
-            margin-bottom: 20px;
-        }
-
-        .modal-body label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .modal-body input,
-        .modal-body select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--primary-text);
-            font-size: 14px;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-        }
-
-        .modal-body input:focus,
-        .modal-body select:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-button {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            font-size: 14px;
-            border: 1px solid var(--border-color);
-            background-color: var(--primary-bg);
-            color: var(--primary-text);
-        }
-
-        .modal-button.primary {
-            background-color: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .modal-button.primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .error-message {
-            color: var(--danger-color);
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        /* Repo list for create mode */
-        .repo-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            margin-top: 8px;
-        }
-
-        .repo-list-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-        }
-
-        .repo-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .repo-list-item:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .repo-list-item.selected {
-            background-color: var(--accent-bg);
-            border-left: 3px solid var(--accent-color);
-        }
-
-        /* Loading & Spinner */
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            color: var(--secondary-text);
-        }
-
-        .spinner {
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top: 3px solid var(--accent-color);
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background-color: var(--primary-text);
-            color: var(--primary-bg);
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            z-index: 2000;
-            transition: transform 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast.success {
-            background-color: var(--success-color);
-            color: white;
-        }
-
-        .toast.error {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        /* ==================== Hover States ==================== */
-        @media (hover: hover) {
-            .sidebar-toggle:hover {
-                background-color: var(--hover-bg);
-            }
-
-            .sidebar-item:hover {
-                background-color: var(--hover-bg);
-            }
-
-            .header-btn:hover {
-                background-color: var(--hover-bg);
-            }
-
-            .modal-button.primary:hover {
-                background-color: var(--accent-hover);
-            }
-
-            .toolbar-btn:hover:not(:disabled) {
-                background-color: var(--hover-bg);
-            }
-        }
-
-        /* ==================== Responsive ==================== */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: var(--header-height);
-                left: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-                width: 80%;
-                max-width: 300px;
-            }
-
-            .sidebar.visible {
-                transform: translateX(0);
-            }
-
-            .content {
-                padding: 0 10px;
-            }
-
-            .header-title {
-                max-width: calc(100% - 100px);
-            }
-
-            .create-toolbar {
-                flex-wrap: wrap;
-            }
-
-            .create-toolbar .title-input-inline {
-                order: -1;
-                width: calc(100% - 50px);
-                flex: none;
-            }
-
-            .create-toolbar-group {
-                flex-shrink: 0;
-            }
-
-            .header-actions .toolbar-btn {
-                padding: 4px 6px;
-            }
-        }
-
-        .sidebar.collapsed {
-            transform: translateX(-100%);
-        }
-
-        @media (min-width: 769px) {
-            .sidebar.collapsed {
-                width: 0;
-                overflow: hidden;
-                border-right: none;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <!-- ==================== Header ==================== -->
-    <div class="header">
-        <button class="sidebar-toggle header-btn active" id="sidebarToggle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM8 5H4V19H8V5ZM10 5V19H20V5H10Z"
-                    fill="currentColor" />
-            </svg>
-        </button>
-        <a class="header-title" id="headerTitle" target="_blank">GitHub Issue 管理器</a>
-        <div class="header-actions" id="headerActions">
-            <div class="dropdown" id="importDropdown">
-                <button class="toolbar-btn" id="importBtn" title="导入">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                        <path
-                            d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Zm-0-0ZM7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z">
-                        </path>
-                    </svg>
-                </button>
-                <div class="dropdown-content">
-                    <button id="importLocalBtn">从本地文件</button>
-                    <button id="importUrlBtn">从 URL</button>
-                </div>
-            </div>
-            <button class="toolbar-btn danger" id="clearBtn" title="清空">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GitHub Issue 管理器</title>
+        <link
+            type="image/png"
+            rel="icon"
+            href="https://img.icons8.com/material-outlined/24/read.png"
+        />
+        <!-- 关键CSS同步加载 -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
+        />
+        <!-- 非关键CSS异步加载 -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css"
+            media="print"
+            onload="this.media = 'all'"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css"
+            media="print"
+            onload="this.media = 'all'"
+        />
+        <!-- 本地 CSS（variables 必须最先加载） -->
+        <link rel="stylesheet" href="css/variables.css" />
+        <link rel="stylesheet" href="css/base.css" />
+        <link rel="stylesheet" href="css/header.css" />
+        <link rel="stylesheet" href="css/sidebar.css" />
+        <link rel="stylesheet" href="css/content.css" />
+        <link rel="stylesheet" href="css/markdown.css" />
+        <link rel="stylesheet" href="css/create-mode.css" />
+        <link rel="stylesheet" href="css/modal.css" />
+        <link rel="stylesheet" href="css/responsive.css" />
+        <!-- 外部 JS 资源（同步加载，确保在本地脚本之前可用） -->
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    </head>
+
+    <body>
+        <!-- ==================== Header ==================== -->
+        <div class="header">
+            <button class="sidebar-toggle header-btn active" id="sidebarToggle">
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
                     <path
-                        d="M6.116 1.5H9.884a.25.25 0 0 1 .234.166l.544 1.459H5.338l.544-1.459A.25.25 0 0 1 6.116 1.5Zm-1.274.347L4.18 3.625H2.5A.75.75 0 0 0 2.5 5.125h11a.75.75 0 0 0 0-1.5h-1.68l-.662-1.778A1.75 1.75 0 0 0 9.884.5H6.116a1.75 1.75 0 0 0-1.643 1.147Zm9.335 3.778H3.823l.695 8.764a.75.75 0 0 0 .747.686h5.47a.75.75 0 0 0 .747-.686l.695-8.764Z">
-                    </path>
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM8 5H4V19H8V5ZM10 5V19H20V5H10Z"
+                        fill="currentColor"
+                    />
                 </svg>
             </button>
-            <button class="toolbar-btn" id="saveBtn" title="保存">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                    <path
-                        d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z">
-                    </path>
-                </svg>
-            </button>
-        </div>
-        <div class="menu-dropdown" id="menuDropdown">
-            <button class="menu-toggle" id="menuBtn" title="切换模式">
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-                    <path
-                        d="M5.22 1.72a.75.75 0 0 1 0 1.06L2.56 5.44l2.66 2.66a.75.75 0 0 1-1.06 1.06L.97 5.97a.75.75 0 0 1 0-1.06l3.19-3.19a.75.75 0 0 1 1.06 0Zm5.56 0a.75.75 0 0 1 1.06 0l3.19 3.19a.75.75 0 0 1 0 1.06l-3.19 3.19a.75.75 0 1 1-1.06-1.06l2.66-2.66-2.66-2.66a.75.75 0 0 1 0-1.06Z">
-                    </path>
-                </svg>
-            </button>
-            <div class="menu-panel">
-                <button class="menu-item active" id="menuView">查看</button>
-                <button class="menu-item" id="menuCreate">新建</button>
-                <button class="menu-item" id="menuSwitchRepo">换仓</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== View Mode ==================== -->
-    <div class="view-mode" id="viewMode">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-search">
-                <input type="text" id="searchInput" placeholder="搜索 issue...">
-            </div>
-            <ul class="sidebar-list" id="issueList"></ul>
-        </div>
-        <div class="content" id="content">
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <span>加载中...</span>
-            </div>
-            <div class="markdown-body" id="markdownContent" style="display: none;"></div>
-        </div>
-    </div>
-
-    <!-- ==================== Create Mode ==================== -->
-    <div class="create-mode hidden" id="createMode">
-        <div class="create-toolbar">
-            <input type="text" class="title-input-inline" id="titleInput" placeholder="Issue 标题">
-            <div class="create-toolbar-group">
-                <button class="toolbar-btn primary" id="publishBtn" disabled title="发布">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path
-                            d="M0 1.75A.75.75 0 0 1 .79 1l7.5 2.5a.75.75 0 0 1 0 1.42L5 6.32v4.93a.75.75 0 0 1-1.28.53L2.22 10.28l-1.69 3.55a.75.75 0 1 1-1.36-.63l1.82-3.83a.75.75 0 0 1 .55-.41.74.74 0 0 1 .65.2L3.5 10.5V6.32L.79 5.17A.75.75 0 0 1 0 1.75Zm6.28.47L14.5.56l-3.44 7.69L6.28 5.5V2.22Z">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div class="create-main">
-            <div class="editor-pane">
-                <div class="editor-pane-inner">
-                    <button class="preview-toggle" id="previewToggle" title="预览">
-                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+            <a class="header-title" id="headerTitle" target="_blank"
+                >GitHub Issue 管理器</a
+            >
+            <div class="header-actions" id="headerActions">
+                <div class="dropdown" id="importDropdown">
+                    <button class="toolbar-btn" id="importBtn" title="导入">
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 16 16"
+                            fill="currentColor"
+                        >
                             <path
-                                d="M8 2C4.5 2 1.5 5.5 1.5 8s3 6 6.5 6 6.5-3.5 6.5-6-3-6-6.5-6Zm0 10.5c-2.5 0-5-2.5-5-4.5S5.5 3 8 3s5 2.5 5 4.5-2.5 5-5 5Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 5a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z">
-                            </path>
+                                d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Zm-0-0ZM7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"
+                            ></path>
                         </svg>
                     </button>
-                    <div class="editor-write active" id="editorWrite">
-                        <textarea id="contentInput" placeholder="用 Markdown 编写 Issue 内容..."></textarea>
+                    <div class="dropdown-content">
+                        <button id="importLocalBtn">从本地文件</button>
+                        <button id="importUrlBtn">从 URL</button>
                     </div>
-                    <div class="editor-preview-pane" id="editorPreviewPane">
-                        <div class="preview-content markdown-body" id="editorPreview"></div>
+                </div>
+                <button class="toolbar-btn danger" id="clearBtn" title="清空">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M6.116 1.5H9.884a.25.25 0 0 1 .234.166l.544 1.459H5.338l.544-1.459A.25.25 0 0 1 6.116 1.5Zm-1.274.347L4.18 3.625H2.5A.75.75 0 0 0 2.5 5.125h11a.75.75 0 0 0 0-1.5h-1.68l-.662-1.778A1.75 1.75 0 0 0 9.884.5H6.116a1.75 1.75 0 0 0-1.643 1.147Zm9.335 3.778H3.823l.695 8.764a.75.75 0 0 0 .747.686h5.47a.75.75 0 0 0 .747-.686l.695-8.764Z"
+                        ></path>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" id="saveBtn" title="保存">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"
+                        ></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="menu-dropdown" id="menuDropdown">
+                <button class="menu-toggle" id="menuBtn" title="切换模式">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M5.22 1.72a.75.75 0 0 1 0 1.06L2.56 5.44l2.66 2.66a.75.75 0 0 1-1.06 1.06L.97 5.97a.75.75 0 0 1 0-1.06l3.19-3.19a.75.75 0 0 1 1.06 0Zm5.56 0a.75.75 0 0 1 1.06 0l3.19 3.19a.75.75 0 0 1 0 1.06l-3.19 3.19a.75.75 0 1 1-1.06-1.06l2.66-2.66-2.66-2.66a.75.75 0 0 1 0-1.06Z"
+                        ></path>
+                    </svg>
+                </button>
+                <div class="menu-panel">
+                    <button class="menu-item active" id="menuView">查看</button>
+                    <button class="menu-item" id="menuCreate">新建</button>
+                    <button class="menu-item" id="menuSwitchRepo">换仓</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== View Mode ==================== -->
+        <div class="view-mode" id="viewMode">
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-search">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="搜索 issue..."
+                    />
+                </div>
+                <ul class="sidebar-list" id="issueList"></ul>
+            </div>
+            <div class="content" id="content">
+                <button class="edit-btn" id="editBtn" title="编辑此 Issue">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25a1.75 1.75 0 0 1 .445-.758l8.61-8.61Zm1.414 1.06a.25.25 0 0 0-.354 0L3.463 11.1a.25.25 0 0 0-.064.108l-.563 1.97 1.971-.564a.25.25 0 0 0 .108-.064l8.61-8.61a.25.25 0 0 0 0-.353l-1.098-1.098Z"
+                        ></path>
+                    </svg>
+                </button>
+                <div class="content-edit-toolbar" id="contentEditToolbar">
+                    <input
+                        type="text"
+                        class="edit-title-input"
+                        id="editTitleInput"
+                        placeholder="Issue 标题"
+                    />
+                    <button
+                        class="toolbar-btn"
+                        id="editPreviewToggle"
+                        title="预览"
+                    >
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 16 16"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M8 2C4.5 2 1.5 5.5 1.5 8s3 6 6.5 6 6.5-3.5 6.5-6-3-6-6.5-6Zm0 10.5c-2.5 0-5-2.5-5-4.5S5.5 3 8 3s5 2.5 5 4.5-2.5 5-5 5Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 5a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"
+                            ></path>
+                        </svg>
+                    </button>
+                    <button
+                        class="toolbar-btn primary"
+                        id="editSaveBtn"
+                        title="保存"
+                    >
+                        保存
+                    </button>
+                    <button
+                        class="toolbar-btn danger"
+                        id="editCancelBtn"
+                        title="取消"
+                    >
+                        取消
+                    </button>
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <span>加载中...</span>
+                </div>
+                <div
+                    class="markdown-body"
+                    id="markdownContent"
+                    style="display: none"
+                ></div>
+                <div class="content-edit-body" id="contentEditBody">
+                    <textarea
+                        class="shared-textarea"
+                        id="editContentInput"
+                        placeholder="用 Markdown 编辑 Issue 内容..."
+                    ></textarea>
+                </div>
+                <div
+                    class="content-edit-preview preview-area"
+                    id="contentEditPreview"
+                >
+                    <div class="markdown-body" id="editPreviewContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Create Mode ==================== -->
+        <div class="create-mode hidden" id="createMode">
+            <div class="create-toolbar">
+                <input
+                    type="text"
+                    class="title-input-inline"
+                    id="titleInput"
+                    placeholder="Issue 标题"
+                />
+                <div class="create-toolbar-group">
+                    <button
+                        class="toolbar-btn primary"
+                        id="publishBtn"
+                        disabled
+                        title="发布"
+                    >
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M0 1.75A.75.75 0 0 1 .79 1l7.5 2.5a.75.75 0 0 1 0 1.42L5 6.32v4.93a.75.75 0 0 1-1.28.53L2.22 10.28l-1.69 3.55a.75.75 0 1 1-1.36-.63l1.82-3.83a.75.75 0 0 1 .55-.41.74.74 0 0 1 .65.2L3.5 10.5V6.32L.79 5.17A.75.75 0 0 1 0 1.75Zm6.28.47L14.5.56l-3.44 7.69L6.28 5.5V2.22Z"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="create-main">
+                <div class="editor-pane">
+                    <div class="editor-pane-inner">
+                        <button
+                            class="preview-toggle"
+                            id="previewToggle"
+                            title="预览"
+                        >
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 16 16"
+                                fill="currentColor"
+                            >
+                                <path
+                                    d="M8 2C4.5 2 1.5 5.5 1.5 8s3 6 6.5 6 6.5-3.5 6.5-6-3-6-6.5-6Zm0 10.5c-2.5 0-5-2.5-5-4.5S5.5 3 8 3s5 2.5 5 4.5-2.5 5-5 5Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 5a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"
+                                ></path>
+                            </svg>
+                        </button>
+                        <div class="editor-write active" id="editorWrite">
+                            <textarea
+                                class="shared-textarea"
+                                id="contentInput"
+                                placeholder="用 Markdown 编写 Issue 内容..."
+                            ></textarea>
+                        </div>
+                        <div
+                            class="editor-preview-pane preview-area"
+                            id="editorPreviewPane"
+                        >
+                            <div
+                                class="preview-content markdown-body"
+                                id="editorPreview"
+                            ></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- ==================== Token Modal ==================== -->
-    <div class="modal-overlay hidden" id="tokenModal">
-        <div class="modal">
-            <h3 class="modal-title">GitHub 认证</h3>
-            <div class="modal-body">
-                <label for="githubToken">GitHub 个人访问令牌</label>
-                <input type="password" id="githubToken" placeholder="输入你的 GitHub token">
-                <p class="error-message" id="tokenError"></p>
-                <label for="repoSelect">选择仓库</label>
-                <select id="repoSelect" disabled>
-                    <option value="">先验证 token</option>
-                </select>
-                <p class="error-message" id="repoError"></p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-button" id="cancelTokenBtn">取消</button>
-                <button class="modal-button primary" id="verifyTokenBtn">验证</button>
-                <button class="modal-button primary" id="saveTokenBtn" style="display: none;">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== Repo Switch Modal ==================== -->
-    <div class="modal-overlay hidden" id="repoSwitchModal">
-        <div class="modal">
-            <h3 class="modal-title">切换仓库</h3>
-            <div class="modal-body">
-                <label for="newRepoSelect">选择新仓库</label>
-                <select id="newRepoSelect">
-                    <option value="">加载中...</option>
-                </select>
-                <p class="error-message" id="newRepoError"></p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-button" id="cancelSwitchBtn">取消</button>
-                <button class="modal-button primary" id="saveSwitchBtn">切换</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== Import URL Modal ==================== -->
-    <div class="modal-overlay hidden" id="urlModal">
-        <div class="modal">
-            <h3 class="modal-title">从 URL 导入</h3>
-            <div class="modal-body">
-                <label for="urlInput">Markdown 文件 URL</label>
-                <input type="text" id="urlInput" placeholder="https://...">
-            </div>
-            <div class="modal-footer">
-                <button class="modal-button" id="cancelUrlBtn">取消</button>
-                <button class="modal-button primary" id="loadUrlBtn">加载</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== Publish Repo Selection Modal ==================== -->
-    <div class="modal-overlay hidden" id="publishRepoModal">
-        <div class="modal">
-            <h3 class="modal-title">选择发布仓库</h3>
-            <div class="modal-body">
-                <label>选择要发布 Issue 的仓库</label>
-                <div class="repo-list" id="publishRepoList">
-                    <div class="repo-list-item">加载中...</div>
+        <!-- ==================== Token Modal ==================== -->
+        <div class="modal-overlay hidden" id="tokenModal">
+            <div class="modal">
+                <h3 class="modal-title">GitHub 认证</h3>
+                <div class="modal-body">
+                    <label for="githubToken">GitHub 个人访问令牌</label>
+                    <input
+                        type="password"
+                        id="githubToken"
+                        placeholder="输入你的 GitHub token"
+                    />
+                    <p class="error-message" id="tokenError"></p>
+                    <label for="repoSelect">选择仓库</label>
+                    <select id="repoSelect" disabled>
+                        <option value="">先验证 token</option>
+                    </select>
+                    <p class="error-message" id="repoError"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button" id="cancelTokenBtn">
+                        取消
+                    </button>
+                    <button class="modal-button primary" id="verifyTokenBtn">
+                        验证
+                    </button>
+                    <button
+                        class="modal-button primary"
+                        id="saveTokenBtn"
+                        style="display: none"
+                    >
+                        保存
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="modal-button" id="cancelPublishRepoBtn">取消</button>
-                <button class="modal-button primary" id="confirmPublishRepoBtn" disabled>发布</button>
+        </div>
+
+        <!-- ==================== Repo Switch Modal ==================== -->
+        <div class="modal-overlay hidden" id="repoSwitchModal">
+            <div class="modal">
+                <h3 class="modal-title">切换仓库</h3>
+                <div class="modal-body">
+                    <label for="newRepoSelect">选择新仓库</label>
+                    <select id="newRepoSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                    <p class="error-message" id="newRepoError"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button" id="cancelSwitchBtn">
+                        取消
+                    </button>
+                    <button class="modal-button primary" id="saveSwitchBtn">
+                        切换
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- ==================== Toast ==================== -->
-    <div class="toast" id="toast"></div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 初始化 marked.js
-            marked.setOptions({
-                breaks: true,
-                gfm: true
-            });
-
-            // ==================== DOM Elements ====================
-            // Header
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const headerTitle = document.getElementById('headerTitle');
-            const menuDropdown = document.getElementById('menuDropdown');
-            const menuBtn = document.getElementById('menuBtn');
-            const headerActions = document.getElementById('headerActions');
-            const menuView = document.getElementById('menuView');
-            const menuCreate = document.getElementById('menuCreate');
-            const menuSwitchRepo = document.getElementById('menuSwitchRepo');
-
-            // View Mode
-            const viewMode = document.getElementById('viewMode');
-            const sidebar = document.getElementById('sidebar');
-            const issueList = document.getElementById('issueList');
-            const searchInput = document.getElementById('searchInput');
-            const content = document.getElementById('content');
-            const loading = document.getElementById('loading');
-            const markdownContent = document.getElementById('markdownContent');
-
-            // Create Mode
-            const createMode = document.getElementById('createMode');
-            const titleInput = document.getElementById('titleInput');
-            const contentInput = document.getElementById('contentInput');
-            const editorPreview = document.getElementById('editorPreview');
-            const previewToggle = document.getElementById('previewToggle');
-            const editorWrite = document.getElementById('editorWrite');
-            const editorPreviewPane = document.getElementById('editorPreviewPane');
-            const importDropdown = document.getElementById('importDropdown');
-            const importLocalBtn = document.getElementById('importLocalBtn');
-            const importUrlBtn = document.getElementById('importUrlBtn');
-            const clearBtn = document.getElementById('clearBtn');
-            const saveBtn = document.getElementById('saveBtn');
-            const publishBtn = document.getElementById('publishBtn');
-
-            // Token Modal
-            const tokenModal = document.getElementById('tokenModal');
-            const githubTokenInput = document.getElementById('githubToken');
-            const repoSelect = document.getElementById('repoSelect');
-            const verifyTokenBtn = document.getElementById('verifyTokenBtn');
-            const saveTokenBtn = document.getElementById('saveTokenBtn');
-            const cancelTokenBtn = document.getElementById('cancelTokenBtn');
-            const tokenError = document.getElementById('tokenError');
-            const repoError = document.getElementById('repoError');
-
-            // Repo Switch Modal
-            const repoSwitchModal = document.getElementById('repoSwitchModal');
-            const newRepoSelect = document.getElementById('newRepoSelect');
-            const saveSwitchBtn = document.getElementById('saveSwitchBtn');
-            const cancelSwitchBtn = document.getElementById('cancelSwitchBtn');
-            const newRepoError = document.getElementById('newRepoError');
-
-            // URL Import Modal
-            const urlModal = document.getElementById('urlModal');
-            const urlInput = document.getElementById('urlInput');
-            const loadUrlBtn = document.getElementById('loadUrlBtn');
-            const cancelUrlBtn = document.getElementById('cancelUrlBtn');
-
-            // Publish Repo Modal
-            const publishRepoModal = document.getElementById('publishRepoModal');
-            const publishRepoList = document.getElementById('publishRepoList');
-            const confirmPublishRepoBtn = document.getElementById('confirmPublishRepoBtn');
-            const cancelPublishRepoBtn = document.getElementById('cancelPublishRepoBtn');
-
-            // Toast
-            const toast = document.getElementById('toast');
-
-            // ==================== State ====================
-            let issues = [];
-            let currentRepo = '';
-            let currentIssue = null;
-            let debounceTimer = null;
-            let sidebarCollapsed = false;
-            let imageViewer = null;
-            let activeItemEl = null;
-            let renderAbortController = null;
-            let selectedPublishRepo = null;
-            let currentMode = 'view'; // 'view' or 'create'
-
-            const GH_CDN = 'gh-proxy.com';
-            const DEBOUNCE_DELAY = 300;
-
-            const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"></path></svg>`;
-            const COPIED_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"></path><path d="M6 4V8H18V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H6ZM8 2H16V6H8V2Z"></path></svg>`;
-
-            // ==================== Toast ====================
-            function showToast(message, type = '') {
-                toast.textContent = message;
-                toast.className = 'toast' + (type ? ` ${type}` : '');
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
-            }
-
-            // ==================== Mode Switching ====================
-            function switchMode(mode) {
-                currentMode = mode;
-                if (mode === 'view') {
-                    viewMode.classList.remove('hidden');
-                    createMode.classList.add('hidden');
-                    menuView.classList.add('active');
-                    menuCreate.classList.remove('active');
-                    sidebarToggle.style.display = '';
-                    headerTitle.style.display = '';
-                    headerTitle.textContent = currentRepo || 'GitHub Issue 管理器';
-                    headerActions.classList.remove('visible');
-                } else {
-                    viewMode.classList.add('hidden');
-                    createMode.classList.remove('hidden');
-                    menuView.classList.remove('active');
-                    menuCreate.classList.add('active');
-                    sidebarToggle.style.display = 'none';
-                    headerTitle.style.display = 'none';
-                    headerActions.classList.add('visible');
-                    switchEditorTab('write');
-                }
-                // Close menu after selection
-                menuDropdown.classList.remove('open');
-            }
-
-            // Menu toggle
-            menuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menuDropdown.classList.toggle('open');
-            });
-
-            // Close menu on outside click
-            document.addEventListener('click', () => {
-                menuDropdown.classList.remove('open');
-            });
-
-            menuDropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-
-            menuView.addEventListener('click', () => switchMode('view'));
-            menuCreate.addEventListener('click', () => switchMode('create'));
-            menuSwitchRepo.addEventListener('click', () => {
-                menuDropdown.classList.remove('open');
-                showRepoSwitchModal();
-            });
-
-            // ==================== GitHub Token ====================
-            function checkAuth() {
-                const token = localStorage.getItem('githubToken');
-                const repo = localStorage.getItem('bjRepo');
-
-                if (!token || !repo) {
-                    showTokenModal();
-                } else {
-                    currentRepo = repo;
-                    headerTitle.textContent = repo;
-                    loadIssues(token, repo);
-                    publishBtn.disabled = false;
-                }
-
-                // Restore sidebar collapse state
-                if (window.innerWidth > 768) {
-                    const collapsed = localStorage.getItem('sidebarCollapsed');
-                    collapsed === 'true' ? (sidebarCollapsed = true, sidebar.classList.add('collapsed'), sidebarToggle.classList.remove('active')) : (sidebarCollapsed = false, sidebar.classList.remove('collapsed'), sidebarToggle.classList.add('active'));
-                }
-            }
-
-            function showTokenModal() {
-                tokenModal.classList.remove('hidden');
-                githubTokenInput.focus();
-            }
-
-            function hideTokenModal() {
-                tokenModal.classList.add('hidden');
-                tokenError.textContent = '';
-                repoError.textContent = '';
-            }
-
-            async function verifyToken(token) {
-                try {
-                    const response = await fetch('https://api.github.com/user', {
-                        headers: { 'Authorization': `token ${token}` }
-                    });
-                    return response.ok;
-                } catch (error) {
-                    console.error('验证 token 失败:', error);
-                    return false;
-                }
-            }
-
-            async function fetchRepos(token, selectEl) {
-                selectEl.innerHTML = '<option value="">加载中...</option>';
-                selectEl.disabled = true;
-
-                try {
-                    const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-
-                    if (!response.ok) throw new Error('获取仓库列表失败');
-
-                    const repos = await response.json();
-                    selectEl.innerHTML = '';
-
-                    if (repos.length === 0) {
-                        selectEl.innerHTML = '<option value="">没有可用的仓库</option>';
-                        return [];
-                    }
-
-                    repos.sort((a, b) => a.full_name.localeCompare(b.full_name));
-
-                    const fragment = document.createDocumentFragment();
-                    repos.forEach(repo => {
-                        const option = document.createElement('option');
-                        option.value = repo.full_name;
-                        option.textContent = repo.full_name;
-                        fragment.appendChild(option);
-                    });
-                    selectEl.appendChild(fragment);
-
-                    selectEl.disabled = false;
-
-                    if (currentRepo) {
-                        selectEl.value = currentRepo;
-                    }
-
-                    return repos;
-                } catch (error) {
-                    console.error('获取仓库列表失败:', error);
-                    selectEl.innerHTML = '<option value="">加载失败</option>';
-                    return [];
-                }
-            }
-
-            // Token modal events
-            verifyTokenBtn.addEventListener('click', async () => {
-                const token = githubTokenInput.value.trim();
-                if (!token) {
-                    tokenError.textContent = '请输入 GitHub token';
-                    return;
-                }
-
-                verifyTokenBtn.disabled = true;
-                verifyTokenBtn.textContent = '验证中...';
-
-                const isValid = await verifyToken(token);
-
-                if (isValid) {
-                    tokenError.textContent = '';
-                    githubTokenInput.disabled = true;
-                    verifyTokenBtn.style.display = 'none';
-                    saveTokenBtn.style.display = 'block';
-                    repoSelect.disabled = false;
-
-                    await fetchRepos(token, repoSelect);
-                } else {
-                    tokenError.textContent = '无效的 token，请重试';
-                }
-
-                verifyTokenBtn.disabled = false;
-                verifyTokenBtn.textContent = '验证';
-            });
-
-            saveTokenBtn.addEventListener('click', () => {
-                const repo = repoSelect.value;
-                if (!repo) {
-                    repoError.textContent = '请选择一个仓库';
-                    return;
-                }
-
-                localStorage.setItem('githubToken', githubTokenInput.value);
-                localStorage.setItem('bjRepo', repo);
-                currentRepo = repo;
-
-                hideTokenModal();
-                publishBtn.disabled = false;
-                loadIssues(githubTokenInput.value, repo);
-            });
-
-            cancelTokenBtn.addEventListener('click', () => {
-                hideTokenModal();
-                if (!localStorage.getItem('githubToken') || !localStorage.getItem('bjRepo')) {
-                    showTokenModal();
-                }
-            });
-
-            // ==================== Repo Switch Modal ====================
-            function showRepoSwitchModal() {
-                const token = localStorage.getItem('githubToken');
-                if (!token) {
-                    newRepoError.textContent = '请先设置 GitHub token';
-                    return;
-                }
-                repoSwitchModal.classList.remove('hidden');
-                fetchRepos(token, newRepoSelect);
-            }
-
-            function hideRepoSwitchModal() {
-                repoSwitchModal.classList.add('hidden');
-                newRepoError.textContent = '';
-            }
-
-            saveSwitchBtn.addEventListener('click', () => {
-                const repo = newRepoSelect.value;
-                if (!repo) {
-                    newRepoError.textContent = '请选择一个仓库';
-                    return;
-                }
-
-                localStorage.setItem('bjRepo', repo);
-                currentRepo = repo;
-
-                hideRepoSwitchModal();
-                loadIssues(localStorage.getItem('githubToken'), repo);
-            });
-
-            cancelSwitchBtn.addEventListener('click', hideRepoSwitchModal);
-
-            // ==================== View Mode: Issue List ====================
-            async function loadIssues(token, repo) {
-                loading.style.display = 'flex';
-                markdownContent.style.display = 'none';
-                markdownContent.innerHTML = '';
-                issueList.innerHTML = '';
-                headerTitle.textContent = `加载 ${repo} 的 issues...`;
-
-                try {
-                    issues = [];
-                    let page = 1;
-                    while (true) {
-                        const response = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&sort=updated&per_page=100&page=${page}`, {
-                            headers: { 'Authorization': `token ${token}` }
-                        });
-
-                        if (!response.ok) {
-                            if (response.status === 401) {
-                                localStorage.removeItem('githubToken');
-                                localStorage.removeItem('bjRepo');
-                                showTokenModal();
-                                tokenError.textContent = 'Token 已失效，请重新输入';
-                                return;
-                            }
-                            throw new Error('获取 issues 失败');
-                        }
-
-                        const data = await response.json();
-                        issues.push(...data);
-                        if (data.length < 100) break;
-                        page++;
-                    }
-
-                    if (issues.length === 0) {
-                        issueList.innerHTML = '<li style="padding: 15px; text-align: center;">没有 issues</li>';
-                        markdownContent.innerHTML = '<p>这个仓库没有 issues。</p>';
-                        markdownContent.style.display = 'block';
-                        loading.style.display = 'none';
-                        headerTitle.textContent = repo;
-                        return;
-                    }
-
-                    renderIssueList();
-
-                    currentIssue = issues[0];
-                    const firstItem = issueList.querySelector('.sidebar-item');
-                    renderIssue(currentIssue);
-                    highlightCurrentIssue(firstItem);
-                    headerTitle.textContent = currentIssue.title;
-                    headerTitle.href = currentIssue.html_url;
-                } catch (error) {
-                    console.error('加载 issues 失败:', error);
-                    issueList.innerHTML = `<li style="padding: 15px; text-align: center; color: var(--danger-color);">加载 issues 失败</li>`;
-                    loading.style.display = 'none';
-                    headerTitle.textContent = '加载失败';
-                }
-            }
-
-            function renderIssueList() {
-                searchInput.setAttribute('placeholder', `在 ${issues.length} 个 issues 中搜索...`);
-
-                const fragment = document.createDocumentFragment();
-
-                issues.forEach(issue => {
-                    const li = document.createElement('li');
-                    li.className = 'sidebar-item';
-                    li.dataset.id = issue.id;
-
-                    const titleDiv = document.createElement('div');
-                    titleDiv.className = 'sidebar-item-title';
-                    titleDiv.textContent = issue.title;
-
-                    const metaDiv = document.createElement('div');
-                    metaDiv.className = 'sidebar-item-meta';
-
-                    const labelSpan = document.createElement('span');
-                    labelSpan.textContent = issue.labels.map(label => label.name).join(' | ');
-
-                    const dateSpan = document.createElement('span');
-                    dateSpan.textContent = new Date(issue.updated_at).toLocaleDateString();
-
-                    metaDiv.appendChild(labelSpan);
-                    metaDiv.appendChild(dateSpan);
-                    li.appendChild(titleDiv);
-                    li.appendChild(metaDiv);
-                    fragment.appendChild(li);
-                });
-
-                const noMatches = document.createElement('li');
-                noMatches.id = 'noMatches';
-                noMatches.style.display = 'none';
-                noMatches.style.padding = '15px';
-                noMatches.style.textAlign = 'center';
-                noMatches.textContent = '没有匹配的 issues';
-                fragment.appendChild(noMatches);
-
-                issueList.appendChild(fragment);
-            }
-
-            function replaceGithubImageLinks(md) {
-                return md.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
-                    if (url.startsWith('https://github.com/') && url.endsWith('?raw=true')) {
-                        url = url.replace('?raw=true', '');
-                        url = url.replace('/blob/', '/');
-                        url = url.replace('https://github.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
-                    } else if (url.startsWith('https://raw.githubusercontent.com/')) {
-                        url = url.replace('https://raw.githubusercontent.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
-                    }
-                    return `![${alt}](${url})`;
-                });
-            }
-
-            function renderIssue(issue) {
-                if (renderAbortController) renderAbortController.abort();
-                const ac = new AbortController();
-                renderAbortController = ac;
-
-                loading.style.display = 'flex';
-                markdownContent.style.display = 'none';
-
-                let newBody = replaceGithubImageLinks(issue.body || '');
-                newBody += `\n<p style="text-align: center; font-size: 12px; font-style: italic; color: #999; margin: 30px 0 0;">Created at ${new Date(issue.created_at).toLocaleDateString()}</p>`;
-
-                const rawHtml = marked.parse(newBody || '*没有内容*');
-                const cleanHtml = DOMPurify.sanitize(rawHtml);
-
-                if (ac.signal.aborted) return;
-
-                markdownContent.innerHTML = cleanHtml;
-
-                const links = markdownContent.querySelectorAll('a');
-                links.forEach(link => {
-                    if (!link.getAttribute('href')?.startsWith('#')) {
-                        link.setAttribute('target', '_blank');
-                        link.setAttribute('rel', 'noopener noreferrer');
-                    }
-                });
-
-                if (imageViewer) imageViewer.destroy();
-
-                const images = markdownContent.querySelectorAll('img');
-                images.forEach(img => { img.loading = 'lazy'; });
-
-                if (images.length > 0) {
-                    const options = {
-                        navbar: false,
-                        title: false,
-                        toolbar: {
-                            zoomIn: true, zoomOut: true, oneToOne: true, reset: true,
-                            prev: images.length > 1, next: images.length > 1,
-                            rotateLeft: true, rotateRight: true,
-                            flipHorizontal: true, flipVertical: true,
-                        },
-                        backdrop: true,
-                        transition: true,
-                    };
-                    imageViewer = new Viewer(markdownContent, options);
-                }
-
-                const pres = markdownContent.querySelectorAll('pre');
-                pres.forEach(item => {
-                    const copybtn = document.createElement('span');
-                    copybtn.innerHTML = COPY_ICON;
-                    copybtn.className = 'copybtn';
-                    item.appendChild(copybtn);
-                });
-
-                markdownContent.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-
-                loading.style.display = 'none';
-                markdownContent.style.display = 'block';
-            }
-
-            // Copy button event delegation
-            markdownContent.addEventListener('click', (e) => {
-                const copybtn = e.target.closest('.copybtn');
-                if (!copybtn) return;
-                const pre = copybtn.closest('pre');
-                if (!pre) return;
-                const text = pre.firstElementChild?.innerText?.trim();
-                if (!text) return;
-                navigator.clipboard.writeText(text).then(() => {
-                    copybtn.innerHTML = COPIED_ICON;
-                    setTimeout(() => { copybtn.innerHTML = COPY_ICON; }, 2000);
-                });
-            });
-
-            function highlightCurrentIssue(newItemEl) {
-                if (activeItemEl) activeItemEl.classList.remove('active');
-                if (newItemEl) newItemEl.classList.add('active');
-                activeItemEl = newItemEl;
-            }
-
-            function searchIssues(query) {
-                const lowerQuery = query.toLowerCase();
-                const matchedIds = new Set(
-                    issues.filter(issue => issue.title.toLowerCase().includes(lowerQuery)).map(issue => issue.id)
-                );
-
-                const items = issueList.querySelectorAll('.sidebar-item');
-                items.forEach(item => {
-                    const issueId = parseInt(item.dataset.id);
-                    item.style.display = matchedIds.has(issueId) ? '' : 'none';
-                });
-
-                document.getElementById('noMatches').style.display = matchedIds.size === 0 && query ? 'block' : 'none';
-            }
-
-            // Issue list click (event delegation)
-            issueList.addEventListener('click', (e) => {
-                const li = e.target.closest('.sidebar-item');
-                if (!li) return;
-
-                const issueId = parseInt(li.dataset.id);
-                const issue = issues.find(i => i.id === issueId);
-                if (!issue) return;
-
-                currentIssue = issue;
-                renderIssue(issue);
-                highlightCurrentIssue(li);
-                headerTitle.textContent = issue.title;
-                headerTitle.href = issue.html_url;
-
-                // Mobile: close sidebar after selection
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('visible');
-                    sidebarToggle.classList.remove('active');
-                }
-            });
-
-            searchInput.addEventListener('input', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    searchIssues(searchInput.value.trim());
-                }, DEBOUNCE_DELAY);
-            });
-
-            sidebarToggle.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.toggle('visible');
-                    sidebarToggle.classList.toggle('active');
-                } else {
-                    sidebarCollapsed = !sidebarCollapsed;
-                    sidebar.classList.toggle('collapsed');
-                    sidebarToggle.classList.toggle('active');
-                    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
-                }
-            });
-
-            // ==================== Create Mode ====================
-            let editorTab = 'write'; // 'write' or 'preview'
-
-            function switchEditorTab(tab) {
-                editorTab = tab;
-                if (tab === 'write') {
-                    editorWrite.classList.add('active');
-                    editorPreviewPane.classList.remove('active');
-                    previewToggle.classList.remove('active');
-                    previewToggle.title = '预览';
-                } else {
-                    editorPreviewPane.classList.add('active');
-                    editorWrite.classList.remove('active');
-                    previewToggle.classList.add('active');
-                    previewToggle.title = '编辑';
-                    updateEditorPreview();
-                }
-            }
-
-            previewToggle.addEventListener('click', () => {
-                switchEditorTab(editorTab === 'write' ? 'preview' : 'write');
-            });
-
-            function updateEditorPreview() {
-                editorPreview.innerHTML = marked.parse(contentInput.value || '*没有内容可预览*');
-            }
-
-            contentInput.addEventListener('input', () => {
-                // Live update preview if it's visible
-                if (editorTab === 'preview') {
-                    updateEditorPreview();
-                }
-                publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim() && localStorage.getItem('githubToken'));
-            });
-            titleInput.addEventListener('input', () => {
-                // Enable/disable publish based on content
-                publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim() && localStorage.getItem('githubToken'));
-            });
-            // Import dropdown toggle
-            document.getElementById('importBtn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                importDropdown.classList.toggle('open');
-            });
-
-            document.addEventListener('click', () => {
-                importDropdown.classList.remove('open');
-            });
-
-            importDropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-
-            // Import from local file
-            importLocalBtn.addEventListener('click', () => {
-                importDropdown.classList.remove('open');
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = '.md,text/markdown';
-
-                fileInput.onchange = e => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = event => {
-                        titleInput.value = file.name.replace('.md', '');
-                        contentInput.value = event.target.result;
-                        switchEditorTab('write');
-                        saveEditorToLocalStorage();
-                    };
-                    reader.readAsText(file);
-                };
-
-                fileInput.click();
-            });
-
-            // Import from URL
-            importUrlBtn.addEventListener('click', () => {
-                importDropdown.classList.remove('open');
-                urlModal.classList.remove('hidden');
-            });
-
-            cancelUrlBtn.addEventListener('click', () => urlModal.classList.add('hidden'));
-
-            loadUrlBtn.addEventListener('click', async () => {
-                const url = urlInput.value.trim();
-                if (!url) {
-                    showToast('请输入 URL', 'error');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
-
-                    const mdContent = await response.text();
-                    contentInput.value = mdContent;
-                    switchEditorTab('write');
-                    saveEditorToLocalStorage();
-                    urlModal.classList.add('hidden');
-                    urlInput.value = '';
-                    showToast('导入成功', 'success');
-                } catch (error) {
-                    showToast('加载失败: ' + error.message, 'error');
-                }
-            });
-
-            // Clear editor
-            clearBtn.addEventListener('click', () => {
-                if (confirm('确定要清空编辑器吗？')) {
-                    titleInput.value = '';
-                    contentInput.value = '';
-                    updateEditorPreview();
-                    saveEditorToLocalStorage();
-                    publishBtn.disabled = true;
-                }
-            });
-
-            // Save to localStorage
-            function saveEditorToLocalStorage() {
-                const content = {
-                    title: titleInput.value,
-                    content: contentInput.value
-                };
-                localStorage.setItem('mdIssueContent', JSON.stringify(content));
-            }
-
-            function loadEditorFromLocalStorage() {
-                const savedContent = localStorage.getItem('mdIssueContent');
-                if (savedContent) {
-                    try {
-                        const content = JSON.parse(savedContent);
-                        titleInput.value = content.title || '';
-                        contentInput.value = content.content || '';
-                        updateEditorPreview();
-                    } catch (e) {
-                        console.error('Failed to load saved content:', e);
-                    }
-                }
-            }
-
-            saveBtn.addEventListener('click', () => {
-                saveEditorToLocalStorage();
-                if (titleInput.value || contentInput.value) {
-                    showToast('内容已保存', 'success');
-                }
-            });
-
-            // Publish issue
-            publishBtn.addEventListener('click', async () => {
-                if (!titleInput.value.trim()) {
-                    showToast('请输入 Issue 标题', 'error');
-                    return;
-                }
-                if (!contentInput.value.trim()) {
-                    showToast('请输入 Issue 内容', 'error');
-                    return;
-                }
-
-                const token = localStorage.getItem('githubToken');
-                if (!token) {
-                    showToast('请先设置 GitHub Token', 'error');
-                    showTokenModal();
-                    return;
-                }
-
-                // Show repo selection modal
-                publishRepoModal.classList.remove('hidden');
-                confirmPublishRepoBtn.disabled = true;
-                selectedPublishRepo = null;
-                publishRepoList.innerHTML = '<div class="repo-list-item">加载中...</div>';
-
-                try {
-                    const response = await fetch('https://api.github.com/user/repos?per_page=100', {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-
-                    if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
-
-                    const repos = await response.json();
-
-                    if (repos.length === 0) {
-                        publishRepoList.innerHTML = '<div class="repo-list-item">没有找到仓库</div>';
-                        return;
-                    }
-
-                    repos.sort((a, b) => a.full_name.localeCompare(b.full_name));
-
-                    publishRepoList.innerHTML = '';
-                    repos.forEach(repo => {
-                        const item = document.createElement('div');
-                        item.className = 'repo-list-item';
-                        item.textContent = repo.full_name;
-
-                        // Pre-select current repo
-                        if (repo.full_name === currentRepo) {
-                            item.classList.add('selected');
-                            selectedPublishRepo = repo.full_name;
-                            confirmPublishRepoBtn.disabled = false;
-                        }
-
-                        item.addEventListener('click', () => {
-                            publishRepoList.querySelectorAll('.repo-list-item').forEach(i => i.classList.remove('selected'));
-                            item.classList.add('selected');
-                            selectedPublishRepo = repo.full_name;
-                            confirmPublishRepoBtn.disabled = false;
-                        });
-
-                        publishRepoList.appendChild(item);
-                    });
-                } catch (error) {
-                    publishRepoList.innerHTML = `<div class="repo-list-item">加载失败: ${error.message}</div>`;
-                }
-            });
-
-            confirmPublishRepoBtn.addEventListener('click', async () => {
-                if (!selectedPublishRepo) return;
-
-                const token = localStorage.getItem('githubToken');
-
-                try {
-                    confirmPublishRepoBtn.disabled = true;
-                    confirmPublishRepoBtn.textContent = '发布中...';
-
-                    const response = await fetch(`https://api.github.com/repos/${selectedPublishRepo}/issues`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            title: titleInput.value.trim(),
-                            body: contentInput.value.trim()
-                        })
-                    });
-
-                    if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
-
-                    const issue = await response.json();
-                    publishRepoModal.classList.add('hidden');
-
-                    showToast(`Issue 创建成功！`, 'success');
-
-                    // Add link to preview
-                    editorPreview.innerHTML += `<p><a href="${issue.html_url}" target="_blank">在 GitHub 上查看 Issue</a></p>`;
-
-                    // If viewing the same repo, refresh the issue list
-                    if (selectedPublishRepo === currentRepo) {
-                        loadIssues(token, currentRepo);
-                    }
-                } catch (error) {
-                    showToast('创建 Issue 失败: ' + error.message, 'error');
-                    console.error('Failed to create issue:', error);
-                } finally {
-                    confirmPublishRepoBtn.disabled = false;
-                    confirmPublishRepoBtn.textContent = '发布';
-                }
-            });
-
-            cancelPublishRepoBtn.addEventListener('click', () => {
-                publishRepoModal.classList.add('hidden');
-            });
-
-            // ==================== Initialize ====================
-            loadEditorFromLocalStorage();
-            checkAuth();
-
-            // Update publish button state
-            if (localStorage.getItem('githubToken')) {
-                publishBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim());
-            }
-        });
-    </script>
-</body>
-
+        <!-- ==================== Import URL Modal ==================== -->
+        <div class="modal-overlay hidden" id="urlModal">
+            <div class="modal">
+                <h3 class="modal-title">从 URL 导入</h3>
+                <div class="modal-body">
+                    <label for="urlInput">Markdown 文件 URL</label>
+                    <input
+                        type="text"
+                        id="urlInput"
+                        placeholder="https://..."
+                    />
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button" id="cancelUrlBtn">取消</button>
+                    <button class="modal-button primary" id="loadUrlBtn">
+                        加载
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Publish Repo Selection Modal ==================== -->
+        <div class="modal-overlay hidden" id="publishRepoModal">
+            <div class="modal">
+                <h3 class="modal-title">选择发布仓库</h3>
+                <div class="modal-body">
+                    <label>选择要发布 Issue 的仓库</label>
+                    <div class="repo-list" id="publishRepoList">
+                        <div class="repo-list-item">加载中...</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button" id="cancelPublishRepoBtn">
+                        取消
+                    </button>
+                    <button
+                        class="modal-button primary"
+                        id="confirmPublishRepoBtn"
+                        disabled
+                    >
+                        发布
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Toast ==================== -->
+        <div class="toast" id="toast"></div>
+
+        <!-- 本地 JS（按依赖顺序 defer 加载） -->
+        <script defer src="js/state.js"></script>
+        <script defer src="js/dom-refs.js"></script>
+        <script defer src="js/utils.js"></script>
+        <script defer src="js/auth.js"></script>
+        <script defer src="js/view-mode.js"></script>
+        <script defer src="js/edit-mode.js"></script>
+        <script defer src="js/create-mode.js"></script>
+        <script defer src="js/mode-switch.js"></script>
+        <script defer src="js/main.js"></script>
+    </body>
 </html>

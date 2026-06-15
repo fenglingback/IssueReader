@@ -1,0 +1,70 @@
+/* ==================== Global Reset + Body ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    transition: color 0.3s, background-color 0.3s;
+}
+
+/* ==================== Shared Utilities ==================== */
+/* [C7] 共享 textarea 样式 */
+.shared-textarea {
+    width: 100%;
+    flex: 1;
+    resize: none;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px;
+    border: none;
+    background-color: var(--input-bg);
+    color: var(--primary-text);
+    overflow-y: auto;
+}
+
+.shared-textarea:focus {
+    outline: none;
+}
+
+/* [C1-C6, D4] 预览区 .markdown-body 公共样式 */
+.preview-area .markdown-body {
+    background-color: transparent;
+    color: var(--primary-text);
+    max-width: none;
+    padding: 0;
+    width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.preview-area .markdown-body pre {
+    background-color: #1e1e1e;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.preview-area .markdown-body strong {
+    color: var(--primary-text);
+    text-shadow: none;
+    font-weight: 700;
+}
+
+.preview-area .markdown-body em {
+    color: var(--primary-text);
+    font-style: italic;
+}
+
+.preview-area .markdown-body blockquote {
+    background-color: var(--hover-bg);
+    border-left: .25em solid var(--accent-color);
+}
+
+.preview-area .markdown-body code {
+    background-color: rgba(175, 184, 193, 0.2);
+}

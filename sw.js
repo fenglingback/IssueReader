@@ -1,52 +1,76 @@
 /**
- * Service Worker - CDN 资源离线缓存
- * 策略：Cache First（缓存优先），二次加载零网络延迟
+ * Service Worker - CDN + 本地资源离线缓存
+ * 策略：Stale-While-Revalidate（先返回缓存，后台静默更新）
  *
- * 需要缓存的 CDN 资源列表：
- * - marked.js      : Markdown 解析
- * - highlight.js   : 代码高亮
- * - viewer.js      : 图片查看器
- * - DOMPurify      : XSS 防护
- * - github-markdown-css : Markdown 样式
- * - viewer.min.css      : 图片查看器样式
- * - monokai-sublime.min.css : 代码高亮主题
+ * 核心思路：
+ * - 请求命中缓存 → 立即返回旧版本，同时在后台发起网络请求更新缓存
+ * - 请求未命中缓存 → 等待网络响应返回并缓存
+ * - 下次刷新时用户自然拿到最新版本
+ * - 彻底移除手动版本号，部署新代码后用户自动获取更新
+ *
+ * 缓存覆盖范围：
+ * - CDN 外部库：marked.js / highlight.js / viewer.js / DOMPurify / github-markdown-css 等
+ * - 本地 CSS：variables / base / header / sidebar / content / markdown / create-mode / modal / responsive
+ * - 本地 JS：state / dom-refs / utils / auth / view-mode / edit-mode / create-mode / mode-switch / main
  */
 
-// 缓存版本号 —— 更新资源时递增此版本号即可强制刷新缓存
-const CACHE_VERSION = 'v1';
-
-// 缓存名称
-const CACHE_NAME = `cdn-offline-${CACHE_VERSION}`;
+// 固定缓存名称 —— 不再包含版本号，永不需要手动递增
+const CACHE_NAME = 'cdn-offline';
 
 // 需要预缓存的 CDN 资源 URL 列表
 const PRECACHE_URLS = [
-    // CSS 资源
+    // CDN CSS 资源
     'https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css',
     'https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/monokai-sublime.min.css',
-    // JS 资源
+    // CDN JS 资源
     'https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js',
     'https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+    // 本地 CSS 资源
+    'css/variables.css',
+    'css/base.css',
+    'css/header.css',
+    'css/sidebar.css',
+    'css/content.css',
+    'css/markdown.css',
+    'css/create-mode.css',
+    'css/modal.css',
+    'css/responsive.css',
+    // 本地 JS 资源
+    'js/state.js',
+    'js/dom-refs.js',
+    'js/utils.js',
+    'js/auth.js',
+    'js/view-mode.js',
+    'js/edit-mode.js',
+    'js/create-mode.js',
+    'js/mode-switch.js',
+    'js/main.js',
 ];
 
-// CDN 域名白名单 —— 仅对来自这些域名的请求启用缓存优先策略
+// CDN 域名白名单
 const CDN_HOSTS = [
     'cdn.jsdelivr.net',
     'cdnjs.cloudflare.com',
 ];
 
+// 本地资源路径前缀（同源请求的 pathname 前缀）
+const LOCAL_PREFIXES = ['/css/', '/js/'];
+
 /**
- * install 事件 —— Service Worker 安装时预缓存所有 CDN 资源
- * 使用 waitUntil 确保安装阶段完成所有缓存写入后才激活
+ * install 事件 —— Service Worker 安装时预缓存所有资源
+ *
+ * 与旧版区别：
+ * - 预缓存写入固定 CACHE_NAME，不再每次新建缓存
+ * - 使用 allSettled 保证单个资源失败不影响整体
+ * - skipWaiting 让新 SW 立即激活
  */
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] 预缓存 CDN 资源...');
-            // 使用 allSettled 避免单个资源失败导致全部回滚
-            // 某些 CDN 可能因 CORS 限制无法缓存，不应阻塞安装
+            console.log('[SW] 预缓存 CDN + 本地资源...');
             return Promise.allSettled(
                 PRECACHE_URLS.map((url) =>
                     fetch(url, { mode: 'cors' })
@@ -62,7 +86,6 @@ self.addEventListener('install', (event) => {
                 )
             ).then(() => {
                 console.log('[SW] 预缓存完成，立即激活');
-                // 立即激活新的 Service Worker，不等待旧页面关闭
                 return self.skipWaiting();
             });
         })
@@ -71,6 +94,8 @@ self.addEventListener('install', (event) => {
 
 /**
  * activate 事件 —— 清理旧版本缓存，确保客户端立即受控
+ *
+ * 兼容迁移：会自动删除旧的 cdn-offline-v1/v2/... 等带版本号的缓存
  */
 self.addEventListener('activate', (event) => {
     event.waitUntil(
@@ -85,79 +110,89 @@ self.addEventListener('activate', (event) => {
             );
         }).then(() => {
             console.log('[SW] 已激活，控制所有客户端');
-            // 立即接管所有页面，无需刷新
             return self.clients.claim();
         })
     );
 });
 
 /**
- * fetch 事件 —— 拦截请求，对 CDN 资源实施缓存优先策略
+ * fetch 事件 —— Stale-While-Revalidate 策略
  *
- * 策略说明：
- * 1. CDN 资源（CDN_HOSTS 匹配）→ Cache First
- *    - 缓存命中 → 直接返回（零延迟）
- *    - 缓存未命中 → 网络请求 → 缓存后返回
+ * 工作流程：
+ * 1. 收到请求 → 查缓存
+ * 2. 缓存命中 → 立即返回（用户秒开），同时后台 fetch 更新缓存
+ * 3. 缓存未命中 → 等网络响应，写入缓存后返回
+ * 4. 网络也失败 → 返回离线兜底响应
  *
- * 2. 非 CDN 资源 → 不拦截，走浏览器默认行为
- *    （GitHub API 等动态请求不应被缓存）
+ * 效果：
+ * - 首次访问：正常网络加载 + 缓存
+ * - 二次访问：缓存秒开，后台静默更新
+ * - 部署新版本后：用户首次刷新看到旧版，后台拉取新版，再次刷新即用新版
+ * - 完全离线：使用最后一次成功缓存的版本
  */
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // 仅处理 GET 请求（CDN 资源都是 GET）
+    // 仅处理 GET 请求
     if (request.method !== 'GET') return;
 
-    // 仅处理 CDN 域名的请求
+    // 判断是否需要缓存：CDN 域名 或 本地 css/js 路径
     const isCdnRequest = CDN_HOSTS.some((host) => url.hostname === host || url.hostname.endsWith('.' + host));
-    if (!isCdnRequest) return;
+    const isLocalAsset = url.origin === self.location.origin &&
+        LOCAL_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
 
-    // Cache First 策略
+    if (!isCdnRequest && !isLocalAsset) return;
+
+    // Stale-While-Revalidate 策略
     event.respondWith(
-        caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-                // 缓存命中：直接返回，零网络延迟
-                return cachedResponse;
-            }
-
-            // 缓存未命中：从网络获取
-            return fetch(request).then((networkResponse) => {
-                // 仅缓存成功的响应
-                if (networkResponse.ok) {
-                    // 克隆响应后存入缓存（响应只能消费一次）
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, responseToCache);
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.match(request).then((cachedResponse) => {
+                // 后台静默更新：无论缓存是否命中，都发起网络请求更新缓存
+                const fetchPromise = fetch(request)
+                    .then((networkResponse) => {
+                        if (networkResponse.ok) {
+                            // 用响应副本更新缓存，原响应返回给浏览器
+                            cache.put(request, networkResponse.clone());
+                        }
+                        return networkResponse;
+                    })
+                    .catch(() => {
+                        // 网络失败时静默忽略，不影响已返回的缓存响应
+                        return null;
                     });
-                }
-                return networkResponse;
-            }).catch((err) => {
-                // 网络不可用且缓存也没有 → 返回离线提示
-                console.warn(`[SW] 资源不可用: ${request.url}`, err.message);
 
-                // 对 CSS 请求返回空样式，避免页面布局崩溃
-                if (request.destination === 'style') {
-                    return new Response('/* 离线模式：CSS 资源未缓存 */', {
-                        headers: { 'Content-Type': 'text/css' },
-                    });
+                if (cachedResponse) {
+                    // 有缓存 → 立即返回，后台继续更新（用户零等待）
+                    return cachedResponse;
                 }
 
-                // 对 JS 请求返回空脚本，避免 JS 错误阻塞
-                if (request.destination === 'script') {
-                    return new Response('// 离线模式：JS 资源未缓存', {
-                        headers: { 'Content-Type': 'application/javascript' },
-                    });
-                }
+                // 无缓存 → 等待网络响应
+                return fetchPromise.then((networkResponse) => {
+                    if (networkResponse) {
+                        return networkResponse;
+                    }
 
-                return new Response('', { status: 503, statusText: 'Offline' });
+                    // 网络也失败了，返回离线兜底
+                    if (request.destination === 'style') {
+                        return new Response('/* 离线模式：CSS 资源未缓存 */', {
+                            headers: { 'Content-Type': 'text/css' },
+                        });
+                    }
+                    if (request.destination === 'script') {
+                        return new Response('// 离线模式：JS 资源未缓存', {
+                            headers: { 'Content-Type': 'application/javascript' },
+                        });
+                    }
+                    return new Response('', { status: 503, statusText: 'Offline' });
+                });
             });
         })
     );
 });
 
 /**
- * message 事件 —— 支持从页面手动触发缓存更新
+ * message 事件 —— 支持从页面手动触发缓存全量更新
  * 用法：navigator.serviceWorker.controller.postMessage({ type: 'UPDATE_CACHE' })
  */
 self.addEventListener('message', (event) => {
@@ -176,6 +211,12 @@ self.addEventListener('message', (event) => {
                 )
             ).then(() => {
                 console.log('[SW] 缓存更新完成');
+                // 通知所有客户端缓存已更新
+                self.clients.matchAll().then((clients) => {
+                    clients.forEach((client) => {
+                        client.postMessage({ type: 'CACHE_UPDATED' });
+                    });
+                });
             });
         });
     }

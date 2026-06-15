@@ -1,0 +1,48 @@
+/* ==================== CSS Custom Properties ==================== */
+:root {
+    --header-height: 50px;
+    --sidebar-width: 300px;
+    --primary-text: #24292f;
+    --primary-bg: #ffffff;
+    --border-color: #d0d7de;
+    --secondary-text: #57606a;
+    --sidebar-bg: #f6f8fa;
+    --hover-bg: #0000001a;
+    --accent-color: #0969da;
+    --accent-hover: #0a5dc2;
+    --accent-bg: rgba(9, 105, 218, 0.1);
+    --danger-color: #cf222e;
+    --success-color: #1a7f37;
+    --button-bg: #f6f8fa;
+    --preview-bg: #f6f8fa;
+    --input-bg: #ffffff;
+    /* [D4] 主渲染区 markdown-body 色值变量化 */
+    --md-color: #f0f6fcbf;
+    --md-pre-bg: black;
+    --md-pre-border: #3373bc;
+    --md-strong-color: #b8b846b9;
+    --md-strong-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    --md-em-color: #9191ff;
+    --md-blockquote-bg: #2f3e4fac;
+    --md-blockquote-border: #ff00d4c5;
+    --md-code-bg: #6e768166;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-text: #e6edf3;
+        --primary-bg: #0d1117;
+        --border-color: #30363d;
+        --secondary-text: #7d8590;
+        --sidebar-bg: #161b22;
+        --hover-bg: #ffffff1a;
+        --accent-color: #2f81f7;
+        --accent-hover: #1a6fef;
+        --accent-bg: rgba(47, 129, 247, 0.1);
+        --danger-color: #ff7b72;
+        --success-color: #3fb950;
+        --button-bg: #21262d;
+        --preview-bg: #161b22;
+        --input-bg: #0d1117;
+    }
+}

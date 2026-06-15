@@ -1,0 +1,150 @@
+/* ==================== Header ==================== */
+.header {
+    display: flex;
+    align-items: center;
+    height: var(--header-height);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 10px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background-color: var(--primary-bg);
+    z-index: 100;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    color: var(--primary-text);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle.active {
+    background-color: var(--hover-bg);
+}
+
+.header-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-weight: 600;
+    color: var(--primary-text);
+    text-decoration: none;
+    max-width: calc(100% - 160px);
+    text-align: center;
+    scrollbar-width: none;
+}
+
+.header-title::-webkit-scrollbar {
+    display: none;
+}
+
+/* Header action buttons (create mode) */
+.header-actions {
+    display: none;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-actions.visible {
+    display: flex;
+}
+
+.header-actions .toolbar-btn {
+    padding: 6px 8px;
+    font-size: 13px;
+    gap: 3px;
+}
+
+.header-actions .toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.header-actions .dropdown-content {
+    z-index: 200;
+}
+
+/* Menu dropdown */
+.menu-dropdown {
+    position: relative;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    color: var(--primary-text);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.15s;
+}
+
+.menu-toggle:hover {
+    background-color: var(--hover-bg);
+}
+
+.menu-dropdown.open .menu-toggle {
+    background-color: var(--hover-bg);
+}
+
+.menu-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background-color: var(--primary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    min-width: 100px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.menu-dropdown.open .menu-panel {
+    display: block;
+}
+
+.menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    color: var(--primary-text);
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    transition: background-color 0.1s;
+}
+
+.menu-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.menu-item.active {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.menu-item+.menu-item {
+    border-top: 1px solid var(--border-color);
+}

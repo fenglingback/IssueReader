@@ -1,0 +1,66 @@
+/* ==================== Markdown Body (主渲染区) ==================== */
+/* [D4] 主渲染区 .markdown-body 使用变量 */
+.markdown-body {
+    color: var(--md-color);
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: 25px 40px;
+}
+
+@media (max-width: 767px) {
+    .markdown-body {
+        padding: 15px;
+    }
+}
+
+.markdown-body pre {
+    background-color: var(--md-pre-bg);
+    border: 1px solid var(--md-pre-border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+    padding: 0;
+}
+
+.copybtn {
+    height: fit-content;
+    margin: .5rem .5rem 0 0;
+    cursor: pointer;
+}
+
+.markdown-body pre>code {
+    overflow: auto;
+    padding: 1rem;
+}
+
+.markdown-body code {
+    background-color: var(--md-code-bg);
+}
+
+.markdown-body img {
+    cursor: zoom-in;
+}
+
+.markdown-body a,
+.markdown-body a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-position: under;
+}
+
+.markdown-body strong {
+    color: var(--md-strong-color);
+    text-shadow: var(--md-strong-shadow);
+}
+
+.markdown-body em {
+    color: var(--md-em-color);
+    letter-spacing: 0.5px;
+}
+
+.markdown-body blockquote {
+    background-color: var(--md-blockquote-bg);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: .25em solid var(--md-blockquote-border);
+}

@@ -1,0 +1,117 @@
+/* ==================== Content Area + Inline Edit ==================== */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.content.editing {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content .edit-btn {
+    position: sticky;
+    top: 12px;
+    margin-left: auto;
+    margin-right: 12px;
+    margin-bottom: -34px;
+    width: fit-content;
+    z-index: 5;
+    background-color: var(--primary-bg);
+    border: 1px solid var(--border-color);
+    color: var(--secondary-text);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    transition: color 0.15s, background-color 0.15s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.content .edit-btn:hover {
+    color: var(--primary-text);
+    background-color: var(--hover-bg);
+}
+
+.content .edit-btn.visible {
+    display: flex;
+}
+
+.content.editing .edit-btn {
+    display: none !important;
+}
+
+.content-edit-toolbar {
+    display: none;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.content.editing .content-edit-toolbar {
+    display: flex;
+}
+
+.content-edit-toolbar .edit-title-input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg);
+    color: var(--primary-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.content-edit-toolbar .edit-title-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.content-edit-toolbar .edit-title-input::placeholder {
+    font-weight: 400;
+}
+
+.content.editing #markdownContent {
+    display: none !important;
+}
+
+.content.editing #loading {
+    display: none !important;
+}
+
+.content-edit-body {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content.editing .content-edit-body {
+    display: flex;
+}
+
+.content.editing.preview-active .content-edit-body {
+    display: none;
+}
+
+.content-edit-preview {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background-color: var(--preview-bg);
+}
+
+.content.editing.preview-active .content-edit-preview {
+    display: block;
+}
