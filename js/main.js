@@ -1,5 +1,5 @@
 /**
- * 主入口 —— 初始化 marked.js，注册所有事件，启动应用，注册 Service Worker
+ * 主入口 —— 初始化 marked.js / mermaid.js，注册所有事件，启动应用，注册 Service Worker
  */
 (function () {
     // 初始化 marked.js
@@ -7,6 +7,27 @@
         breaks: true,
         gfm: true
     });
+
+    // 初始化 Mermaid.js（流程图/图表渲染）
+    if (typeof mermaid !== 'undefined') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        mermaid.initialize({
+            startOnLoad: false,       // 不自动渲染，由 renderMarkdown 手动触发
+            theme: isDark ? 'dark' : 'default',
+            securityLevel: 'loose',   // 允许图表中的点击事件
+            logLevel: 'error'         // 只在控制台输出错误
+        });
+
+        // 监听系统主题切换，重新初始化 mermaid 主题
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: e.matches ? 'dark' : 'default',
+                securityLevel: 'loose',
+                logLevel: 'error'
+            });
+        });
+    }
 
     // 注册所有模块事件
     App.initAuthEvents();

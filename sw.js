@@ -9,7 +9,7 @@
  * - 彻底移除手动版本号，部署新代码后用户自动获取更新
  *
  * 缓存覆盖范围：
- * - CDN 外部库：marked.js / highlight.js / viewer.js / DOMPurify / github-markdown-css 等
+ * - CDN 外部库：marked.js / highlight.js / viewer.js / DOMPurify / github-markdown-css / mermaid.js 等
  * - 本地 CSS：variables / base / header / sidebar / content / markdown / create-mode / modal / responsive
  * - 本地 JS：state / dom-refs / utils / auth / view-mode / edit-mode / create-mode / mode-switch / main
  */
@@ -28,6 +28,7 @@ const PRECACHE_URLS = [
     'https://cdn.jsdelivr.net/npm/viewerjs/dist/viewer.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+    'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js',
     // 本地 CSS 资源
     'css/variables.css',
     'css/base.css',

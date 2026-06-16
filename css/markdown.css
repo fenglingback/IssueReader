@@ -64,3 +64,39 @@
     border-radius: 10px;
     border-left: .25em solid var(--md-blockquote-border);
 }
+
+/* ==================== Mermaid 图表 ==================== */
+.markdown-body .mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+    padding: 16px;
+    background-color: var(--md-pre-bg);
+    border: 1px solid var(--md-pre-border);
+    border-radius: 6px;
+    overflow-x: auto;
+    min-height: 40px;
+}
+
+.markdown-body .mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mermaid 加载前/降级状态：代码文本居中显示 */
+.markdown-body .mermaid:not([data-processed]) {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--md-color);
+    text-align: left;
+    justify-content: flex-start;
+}
+
+/* Mermaid 语法错误样式 */
+.markdown-body .mermaid-error {
+    border-color: var(--danger-color) !important;
+    color: var(--danger-color);
+}
