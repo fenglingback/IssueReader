@@ -16,6 +16,12 @@
         issueList.innerHTML = '';
         headerTitle.textContent = `加载 ${repo} 的 issues...`;
 
+        // [Bug #7] 重置当前 issue / active 项 / 隐藏编辑按钮
+        // 防止新仓库加载失败或空仓库时，旧 issue 还被当作 currentIssue 误操作
+        state.currentIssue = null;
+        state.activeItemEl = null;
+        editBtn.classList.remove('visible');
+
         try {
             state.issues = [];
             let page = 1;
@@ -26,6 +32,8 @@
 
                 if (!response.ok) {
                     if (response.status === 401) {
+                        // [Bug #1] 隐藏 loading，避免 spinner 盖在认证弹窗下面一直转
+                        loading.style.display = 'none';
                         localStorage.removeItem('githubToken');
                         localStorage.removeItem('bjRepo');
                         App.showTokenModal();
@@ -107,16 +115,24 @@
         issueList.appendChild(fragment);
     }
 
+    /**
+     * [Bug #13] 替换 Markdown 中的 GitHub 图片链接为 CDN 加速链接
+     * 正则允许 URL 中包含一层括号（如 Foo_(1).png），避免被错误截断
+     */
     function replaceGithubImageLinks(md) {
-        return md.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+        // (?:[^()]|\([^()]*\))* 匹配「非括号字符」或「一层平衡的括号」任意次
+        return md.replace(/!\[([^\]]*)\]\((?:[^()]|\([^()]*\))*\)/g, (match, alt) => {
+            // 从 match 中提取 URL（去掉 ![alt]( 前缀和结尾 )）
+            const url = match.slice(match.indexOf('](') + 2, -1);
+            let newUrl = url;
             if (url.startsWith('https://github.com/') && url.endsWith('?raw=true')) {
-                url = url.replace('?raw=true', '');
-                url = url.replace('/blob/', '/');
-                url = url.replace('https://github.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
+                newUrl = url.replace('?raw=true', '')
+                    .replace('/blob/', '/')
+                    .replace('https://github.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
             } else if (url.startsWith('https://raw.githubusercontent.com/')) {
-                url = url.replace('https://raw.githubusercontent.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
+                newUrl = url.replace('https://raw.githubusercontent.com/', `https://${GH_CDN}/https://raw.githubusercontent.com/`);
             }
-            return `![${alt}](${url})`;
+            return `![${alt}](${newUrl})`;
         });
     }
 
@@ -129,9 +145,14 @@
         editBtn.classList.add('visible');
 
         let newBody = replaceGithubImageLinks(issue.body || '');
+        // [Bug #11] 原代码 newBody += <p>Created at...</p> 会让 newBody 永远 truthy
+        // 导致 '*没有内容*' 提示永远不显示。修复：先判断空，再追加创建时间。
+        if (!newBody.trim()) {
+            newBody = '*没有内容*';
+        }
         newBody += `\n<p style="text-align: center; font-size: 12px; font-style: italic; color: #999; margin: 30px 0 0;">Created at ${new Date(issue.created_at).toLocaleDateString()}</p>`;
 
-        App.renderMarkdown(newBody || '*没有内容*', markdownContent);
+        App.renderMarkdown(newBody, markdownContent);
 
         if (state.imageViewer) state.imageViewer.destroy();
 

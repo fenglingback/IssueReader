@@ -80,6 +80,15 @@
                 })
             });
 
+            // [Bug #9] 统一 401 处理，与 loadIssues 行为一致
+            if (response.status === 401) {
+                localStorage.removeItem('githubToken');
+                localStorage.removeItem('bjRepo');
+                App.showToast('Token 已失效，请重新输入', 'error');
+                App.exitEditMode();
+                App.showTokenModal();
+                return;
+            }
             if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
 
             const updatedIssue = await response.json();
@@ -107,7 +116,12 @@
             App.showToast('更新失败: ' + error.message, 'error');
             console.error('Failed to update issue:', error);
         } finally {
-            editSaveBtn.disabled = false;
+            // [Bug #12] 不能无条件 enabled=false
+            // - 成功路径已 exitEditMode，下次进入会重新调用 updateEditSaveState
+            // - 失败路径需根据当前输入重新计算按钮状态（标题为空时应禁用）
+            if (state.isEditing) {
+                updateEditSaveState();
+            }
             editSaveBtn.textContent = '保存';
         }
     }

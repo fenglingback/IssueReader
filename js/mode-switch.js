@@ -25,7 +25,16 @@
             menuCreate.classList.remove('active');
             sidebarToggle.style.display = '';
             headerTitle.style.display = '';
-            headerTitle.textContent = state.currentRepo || 'GitHub Issue 管理器';
+            // [Bug #8] 原代码无条件重置为仓库名，丢失了当前 issue 标题
+            // - 有 currentIssue 时优先显示 issue 标题 + 链接
+            // - 否则显示仓库名
+            if (state.currentIssue) {
+                headerTitle.textContent = state.currentIssue.title;
+                headerTitle.href = state.currentIssue.html_url;
+            } else {
+                headerTitle.textContent = state.currentRepo || 'GitHub Issue 管理器';
+                headerTitle.href = '';
+            }
             headerActions.classList.remove('visible');
             if (state.currentIssue) editBtn.classList.add('visible');
         } else {

@@ -77,6 +77,9 @@
                 container.innerHTML = '<option value="">加载失败</option>';
             } else {
                 container.innerHTML = `<div class="repo-list-item">加载失败: ${error.message}</div>`;
+                // [Bug #16] 列表模式失败时禁用发布按钮，避免用户点了之后 selectedPublishRepo 为 null 无反馈
+                confirmPublishRepoBtn.disabled = true;
+                state.selectedPublishRepo = null;
             }
             return [];
         }
@@ -96,9 +99,24 @@
             publishBtn.disabled = false;
         }
 
+        // [Bug #15] 同步 sidebarToggle 初始 active 状态
+        // - 桌面端：根据 localStorage 的 sidebarCollapsed 决定
+        // - 移动端：sidebar 默认隐藏（无 visible class），toggle 必须移除 active
         if (window.innerWidth > 768) {
             const collapsed = localStorage.getItem('sidebarCollapsed');
-            collapsed === 'true' ? (state.sidebarCollapsed = true, sidebar.classList.add('collapsed'), sidebarToggle.classList.remove('active')) : (state.sidebarCollapsed = false, sidebar.classList.remove('collapsed'), sidebarToggle.classList.add('active'));
+            if (collapsed === 'true') {
+                state.sidebarCollapsed = true;
+                sidebar.classList.add('collapsed');
+                sidebarToggle.classList.remove('active');
+            } else {
+                state.sidebarCollapsed = false;
+                sidebar.classList.remove('collapsed');
+                sidebarToggle.classList.add('active');
+            }
+        } else {
+            state.sidebarCollapsed = false;
+            sidebar.classList.remove('collapsed', 'visible');
+            sidebarToggle.classList.remove('active');
         }
     };
 
@@ -111,6 +129,15 @@
         tokenModal.classList.add('hidden');
         tokenError.textContent = '';
         repoError.textContent = '';
+        // [Bug #5] 重置弹窗内部 UI 状态，否则验证通过后取消再重开会卡死
+        githubTokenInput.disabled = false;
+        githubTokenInput.value = localStorage.getItem('githubToken') || '';
+        verifyTokenBtn.style.display = '';
+        verifyTokenBtn.disabled = false;
+        verifyTokenBtn.textContent = '验证';
+        saveTokenBtn.style.display = 'none';
+        repoSelect.disabled = true;
+        repoSelect.innerHTML = '<option value="">先验证 token</option>';
     };
 
     async function verifyToken(token) {
@@ -182,9 +209,13 @@
     App.showRepoSwitchModal = function () {
         const token = localStorage.getItem('githubToken');
         if (!token) {
-            newRepoError.textContent = '请先设置 GitHub token';
+            // [Bug #6] 无 token 时错误文案写在隐藏弹窗里用户根本看不到
+            // 直接弹 token 认证窗，让用户先完成认证
+            App.showToast('请先设置 GitHub Token', 'error');
+            App.showTokenModal();
             return;
         }
+        newRepoError.textContent = '';
         repoSwitchModal.classList.remove('hidden');
         App.fetchAndRenderRepos(token, newRepoSelect, { mode: 'select' });
     };

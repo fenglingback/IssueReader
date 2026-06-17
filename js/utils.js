@@ -6,13 +6,33 @@
     const { toast, publishBtn, titleInput, contentInput } = App.dom;
 
     // ==================== Toast ====================
-    App.showToast = function (message, type = '') {
-        toast.textContent = message;
+    /**
+     * 显示 Toast 通知
+     * @param {string} message - 文本或 HTML（需配合 html:true）
+     * @param {string} [type] - '' | 'success' | 'error'
+     * @param {{html?: boolean, duration?: number}} [opts]
+     *      - html: 是否按 HTML 渲染（用于含 <a> 等元素的提示）
+     *      - duration: 显示时长（毫秒），默认 3000
+     */
+    App.showToast = function (message, type = '', { html = false, duration = 3000 } = {}) {
+        if (html) {
+            toast.innerHTML = message;
+        } else {
+            toast.textContent = message;
+        }
         toast.className = 'toast' + (type ? ` ${type}` : '');
         toast.classList.add('show');
-        setTimeout(() => {
+        clearTimeout(App._toastTimer);
+        App._toastTimer = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3000);
+            // 收起后清空内容，避免含 <a> 的旧提示残留在 DOM 里被误点
+            setTimeout(() => {
+                if (!toast.classList.contains('show')) {
+                    toast.innerHTML = '';
+                    toast.textContent = '';
+                }
+            }, 400);
+        }, duration);
     };
 
     // ==================== [J2+J3+D3] 统一 Markdown 渲染 ====================

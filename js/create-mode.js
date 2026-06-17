@@ -87,10 +87,14 @@
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = event => {
-                    titleInput.value = file.name.replace('.md', '');
+                    // [Bug #14] 原代码 file.name.replace('.md', '') 只替换单个且不要求结尾
+                    // 改为只去除结尾的 .md 扩展名
+                    titleInput.value = file.name.replace(/\.md$/i, '');
                     contentInput.value = event.target.result;
                     switchEditorTab('write');
                     saveEditorToLocalStorage();
+                    // [Bug #2] 导入后刷新发布按钮状态
+                    App.updatePublishState();
                 };
                 reader.readAsText(file);
             };
@@ -120,6 +124,8 @@
                 contentInput.value = mdContent;
                 switchEditorTab('write');
                 saveEditorToLocalStorage();
+                // [Bug #3] URL 导入后同样需要刷新发布按钮状态
+                App.updatePublishState();
                 urlModal.classList.add('hidden');
                 urlInput.value = '';
                 App.showToast('导入成功', 'success');
@@ -198,9 +204,23 @@
                 const issue = await response.json();
                 publishRepoModal.classList.add('hidden');
 
-                App.showToast(`Issue 创建成功！`, 'success');
+                // [Bug #10] 原代码把链接 append 到 editorPreview.innerHTML
+                // - 如果用户在 write tab 看不到
+                // - innerHTML += 会重建 DOM，丢失 hljs/Viewer 状态
+                // - [Bug #4] 修复后编辑器会被清空，链接也会一起丢
+                // 改用 toast 展示可点击链接，展示时长 6s
+                App.showToast(
+                    `Issue 创建成功！ <a href="${issue.html_url}" target="_blank" rel="noopener noreferrer" style="color:#fff;text-decoration:underline;margin-left:6px;">查看 →</a>`,
+                    'success',
+                    { html: true, duration: 6000 }
+                );
 
-                editorPreview.innerHTML += `<p><a href="${issue.html_url}" target="_blank">在 GitHub 上查看 Issue</a></p>`;
+                // [Bug #4] 发布成功后清空编辑器 + 本地存储，避免重复发布
+                titleInput.value = '';
+                contentInput.value = '';
+                editorPreview.innerHTML = '';
+                localStorage.removeItem('mdIssueContent');
+                App.updatePublishState();
 
                 if (state.selectedPublishRepo === state.currentRepo) {
                     App.loadIssues(token, state.currentRepo);
